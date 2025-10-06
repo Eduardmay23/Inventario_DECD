@@ -1,7 +1,8 @@
+
 "use client";
 
 import { useState } from "react";
-import { PlusCircle, MoreHorizontal, CheckCircle } from "lucide-react";
+import { PlusCircle, MoreHorizontal, CheckCircle, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { collection, doc } from "firebase/firestore";
@@ -33,10 +34,20 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AddLoanForm } from "./add-loan-form";
-import { addDocumentNonBlocking, updateDocumentNonBlocking, useFirebase } from "@/firebase";
+import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking, useFirebase } from "@/firebase";
 
 type LoansClientProps = {
   loans: Loan[];
@@ -45,6 +56,8 @@ type LoansClientProps = {
 
 export default function LoansClient({ loans, products }: LoansClientProps) {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [loanToDelete, setLoanToDelete] = useState<Loan | null>(null);
   const { toast } = useToast();
   const { firestore } = useFirebase();
 
@@ -73,6 +86,24 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
             description: "El préstamo ha sido marcado como devuelto.",
         });
     }
+  };
+
+  const handleDeleteClick = (loan: Loan) => {
+    setLoanToDelete(loan);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (loanToDelete && firestore) {
+      const loanRef = doc(firestore, "loans", loanToDelete.id);
+      deleteDocumentNonBlocking(loanRef);
+      toast({
+        title: "Éxito",
+        description: `El préstamo para "${loanToDelete.productName}" ha sido eliminado.`,
+      });
+      setLoanToDelete(null);
+    }
+    setIsDeleteDialogOpen(false);
   };
 
   return (
@@ -141,6 +172,13 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
                                     >
                                         <CheckCircle className="mr-2 h-4 w-4" /> Marcar como Devuelto
                                     </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onSelect={() => handleDeleteClick(loan)}
+                                      disabled={loan.status !== 'Devuelto'}
+                                      className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                                    >
+                                      <Trash2 className="mr-2 h-4 w-4" /> Eliminar
+                                    </DropdownMenuItem>
                                 </DropdownMenuContent>
                                 </DropdownMenu>
                             </TableCell>
@@ -164,6 +202,23 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
           <AddLoanForm onSubmit={handleAddLoan} products={products} />
         </DialogContent>
       </Dialog>
+      
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Estás absolutamente seguro?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. Esto eliminará permanentemente el préstamo del producto "{loanToDelete?.productName}".
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
