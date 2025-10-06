@@ -24,14 +24,14 @@ export default function AppHeader({
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Search products..."
+              placeholder="Buscar productos..."
               className="w-full rounded-lg bg-secondary pl-8 md:w-[200px] lg:w-[320px]"
             />
           </form>
         )}
         <Button variant="ghost" size="icon" className="rounded-full">
           <Bell className="h-5 w-5" />
-          <span className="sr-only">Toggle notifications</span>
+          <span className="sr-only">Alternar notificaciones</span>
         </Button>
         {children}
       </div>

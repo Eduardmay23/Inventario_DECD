@@ -24,7 +24,7 @@ type DashboardClientProps = {
 
 const chartConfig = {
   quantity: {
-    label: "Quantity",
+    label: "Cantidad",
     color: "hsl(var(--chart-1))",
   },
 } satisfies ChartConfig;
@@ -52,11 +52,11 @@ export default function DashboardClient({
         });
         setSummary(result.summary);
       } catch (error) {
-        console.error("Failed to generate summary:", error);
+        console.error("No se pudo generar el resumen:", error);
         toast({
           variant: "destructive",
           title: "Error",
-          description: "Failed to generate AI summary. Please try again.",
+          description: "No se pudo generar el resumen de IA. Por favor, inténtalo de nuevo.",
         });
       }
     });
@@ -68,32 +68,32 @@ export default function DashboardClient({
     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Total Products</CardTitle>
+          <CardTitle className="text-sm font-medium">Productos Totales</CardTitle>
           <Package className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{totalProducts}</div>
-          <p className="text-xs text-muted-foreground">Unique items in inventory</p>
+          <p className="text-xs text-muted-foreground">Artículos únicos en inventario</p>
         </CardContent>
       </Card>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Total Stock</CardTitle>
+          <CardTitle className="text-sm font-medium">Stock Total</CardTitle>
           <Warehouse className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{totalStock.toLocaleString()}</div>
-          <p className="text-xs text-muted-foreground">Total units across all products</p>
+          <p className="text-xs text-muted-foreground">Unidades totales de todos los productos</p>
         </CardContent>
       </Card>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Low Stock Alerts</CardTitle>
+          <CardTitle className="text-sm font-medium">Alertas de Stock Bajo</CardTitle>
           <AlertTriangle className="h-4 w-4 text-destructive" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{lowStockItems.length}</div>
-          <p className="text-xs text-muted-foreground">Items needing re-order</p>
+          <p className="text-xs text-muted-foreground">Artículos que necesitan ser reordenados</p>
         </CardContent>
       </Card>
       
@@ -101,10 +101,10 @@ export default function DashboardClient({
         <CardHeader>
           <div className="flex items-center gap-2">
             <Bot className="h-6 w-6 text-primary" />
-            <CardTitle>AI-Powered Summary</CardTitle>
+            <CardTitle>Resumen con IA</CardTitle>
           </div>
           <CardDescription>
-            Get an automated analysis of your inventory status and recent activities.
+            Obtén un análisis automatizado del estado de tu inventario y actividades recientes.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -112,20 +112,20 @@ export default function DashboardClient({
             <div className="space-y-4">
               <p className="text-sm leading-relaxed">{summary}</p>
               <Button variant="outline" size="sm" onClick={() => setSummary("")}>
-                Generate New Summary
+                Generar Nuevo Resumen
               </Button>
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center space-y-4 rounded-lg border-2 border-dashed bg-muted/50 p-8 text-center">
-              <p className="text-sm text-muted-foreground">Click the button to generate an inventory analysis using AI.</p>
+              <p className="text-sm text-muted-foreground">Haz clic en el botón para generar un análisis de inventario usando IA.</p>
               <Button onClick={handleGenerateSummary} disabled={isPending}>
                 {isPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Generating...
+                    Generando...
                   </>
                 ) : (
-                  "Generate Summary"
+                  "Generar Resumen"
                 )}
               </Button>
             </div>
@@ -135,8 +135,8 @@ export default function DashboardClient({
 
       <Card className="lg:col-span-2">
         <CardHeader>
-          <CardTitle>Inventory Levels</CardTitle>
-          <CardDescription>Current stock quantity per product.</CardDescription>
+          <CardTitle>Niveles de Inventario</CardTitle>
+          <CardDescription>Cantidad de stock actual por producto.</CardDescription>
         </CardHeader>
         <CardContent>
           <ChartContainer config={chartConfig} className="h-[300px] w-full">
@@ -158,15 +158,15 @@ export default function DashboardClient({
 
       <Card className="lg:col-span-1">
         <CardHeader>
-          <CardTitle>Low Stock Items</CardTitle>
-          <CardDescription>These products are at or below their reorder point.</CardDescription>
+          <CardTitle>Artículos con Stock Bajo</CardTitle>
+          <CardDescription>Estos productos están en su punto de reorden o por debajo.</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Product</TableHead>
-                <TableHead className="text-right">Qty</TableHead>
+                <TableHead>Producto</TableHead>
+                <TableHead className="text-right">Cant</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -178,7 +178,7 @@ export default function DashboardClient({
               )) : (
                 <TableRow>
                   <TableCell colSpan={2} className="h-24 text-center text-muted-foreground">
-                    All stock levels are healthy.
+                    Todos los niveles de stock están bien.
                   </TableCell>
                 </TableRow>
               )}

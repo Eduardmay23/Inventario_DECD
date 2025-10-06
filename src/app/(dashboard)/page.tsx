@@ -9,7 +9,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="flex flex-1 flex-col">
-      <AppHeader title="Dashboard" />
+      <AppHeader title="Panel" />
       <main className="flex-1 p-4 md:p-6">
         <DashboardClient
           inventoryData={inventoryData}

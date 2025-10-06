@@ -40,11 +40,11 @@ export default function DashboardLayout({
               <SidebarMenuButton
                 asChild
                 isActive={pathname === "/"}
-                tooltip="Dashboard"
+                tooltip="Panel"
               >
                 <Link href="/">
                   <Home />
-                  <span>Dashboard</span>
+                  <span>Panel</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -52,11 +52,11 @@ export default function DashboardLayout({
               <SidebarMenuButton
                 asChild
                 isActive={pathname.startsWith("/inventory")}
-                tooltip="Inventory"
+                tooltip="Inventario"
               >
                 <Link href="/inventory">
                   <Package />
-                  <span>Inventory</span>
+                  <span>Inventario</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -64,12 +64,12 @@ export default function DashboardLayout({
               <SidebarMenuButton
                 asChild
                 isActive={pathname.startsWith("/reports")}
-                tooltip="Reports"
+                tooltip="Informes"
                 disabled
               >
                 <Link href="#">
                   <BarChart2 />
-                  <span>Reports</span>
+                  <span>Informes</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -81,23 +81,23 @@ export default function DashboardLayout({
               <SidebarMenuButton
                 asChild
                 isActive={pathname.startsWith("/settings")}
-                tooltip="Settings"
+                tooltip="Configuración"
                 disabled
               >
                 <Link href="#">
                   <Settings />
-                  <span>Settings</span>
+                  <span>Configuración</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
               <div className="flex items-center gap-3 px-2 py-1">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src="https://picsum.photos/seed/avatar/40/40" alt="User" data-ai-hint="person avatar" />
+                  <AvatarImage src="https://picsum.photos/seed/avatar/40/40" alt="Usuario" data-ai-hint="person avatar" />
                   <AvatarFallback>AU</AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col truncate">
-                  <span className="text-sm font-semibold">Admin User</span>
+                  <span className="text-sm font-semibold">Usuario Admin</span>
                   <span className="text-xs text-muted-foreground">admin@stockwise.com</span>
                 </div>
               </div>

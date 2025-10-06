@@ -13,5 +13,5 @@ export type StockLog = {
   timestamp: string;
   productName: string;
   quantityChange: number;
-  reason: 'Sale' | 'Restock' | 'Adjustment' | 'Damage';
+  reason: 'Venta' | 'Reabastecimiento' | 'Ajuste' | 'Daño';
 };
