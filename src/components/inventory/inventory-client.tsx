@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { Download, Edit, MoreHorizontal, PlusCircle, Trash2 } from "lucide-react";
+import { collection, doc } from "firebase/firestore";
+
 import type { Product } from "@/lib/types";
 import AppHeader from "@/components/header";
 import { Button } from "@/components/ui/button";
@@ -42,13 +44,14 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AddProductForm } from "./add-product-form";
+import { addDocumentNonBlocking, deleteDocumentNonBlocking, useFirebase } from "@/firebase";
 
 export default function InventoryClient({ data }: { data: Product[] }) {
-  const [products, setProducts] = useState<Product[]>(data);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const { toast } = useToast();
+  const { firestore } = useFirebase();
 
   const handleDeleteClick = (product: Product) => {
     setProductToDelete(product);
@@ -56,8 +59,9 @@ export default function InventoryClient({ data }: { data: Product[] }) {
   };
 
   const confirmDelete = () => {
-    if (productToDelete) {
-      setProducts(products.filter((p) => p.id !== productToDelete.id));
+    if (productToDelete && firestore) {
+      const productRef = doc(firestore, "products", productToDelete.id);
+      deleteDocumentNonBlocking(productRef);
       toast({
         title: "Éxito",
         description: `El producto "${productToDelete.name}" ha sido eliminado.`,
@@ -68,23 +72,22 @@ export default function InventoryClient({ data }: { data: Product[] }) {
   };
   
   const handleAddProduct = (newProductData: Omit<Product, 'id'>) => {
-    const newProduct: Product = {
-      ...newProductData,
-      id: `PROD${(Math.random() * 1000).toFixed(0).padStart(3, '0')}`,
-    };
-    setProducts([newProduct, ...products]);
-    toast({
-      title: "Éxito",
-      description: `El producto "${newProduct.name}" ha sido añadido.`,
-    });
-    setIsAddDialogOpen(false);
+    if (firestore) {
+      const productsCollection = collection(firestore, "products");
+      addDocumentNonBlocking(productsCollection, newProductData);
+      toast({
+        title: "Éxito",
+        description: `El producto "${newProductData.name}" ha sido añadido.`,
+      });
+      setIsAddDialogOpen(false);
+    }
   };
 
   const handleDownloadCsv = () => {
     const headers = ["ID", "Nombre", "SKU", "Categoría", "Cantidad", "Ubicación", "PuntoDeReorden"];
     const csvRows = [
       headers.join(","),
-      ...products.map(p => 
+      ...data.map(p => 
         [p.id, `"${p.name}"`, p.sku, p.category, p.quantity, `"${p.location}"`, p.reorderPoint].join(",")
       )
     ];
@@ -105,7 +108,6 @@ export default function InventoryClient({ data }: { data: Product[] }) {
       });
     }
   };
-
 
   return (
     <>
@@ -144,7 +146,7 @@ export default function InventoryClient({ data }: { data: Product[] }) {
                         </TableRow>
                         </TableHeader>
                         <TableBody>
-                        {products.map((product) => (
+                        {data.map((product) => (
                             <TableRow key={product.id}>
                             <TableCell className="font-medium">{product.name}</TableCell>
                             <TableCell className="hidden md:table-cell">{product.sku}</TableCell>

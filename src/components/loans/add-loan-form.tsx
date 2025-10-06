@@ -46,7 +46,7 @@ const formSchema = z.object({
 });
 
 type AddLoanFormProps = {
-  onSubmit: (data: Omit<Loan, 'id' | 'status' | 'loanDate'> & { loanDate: string }) => void;
+  onSubmit: (data: Omit<Loan, 'id' | 'status'>) => void;
   products: Product[];
 };
 

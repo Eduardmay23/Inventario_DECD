@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { PlusCircle, MoreHorizontal, CheckCircle, ArrowRightLeft } from "lucide-react";
+import { PlusCircle, MoreHorizontal, CheckCircle } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { collection, doc } from "firebase/firestore";
 
 import type { Loan, Product } from "@/lib/types";
 import AppHeader from "@/components/header";
@@ -35,39 +36,43 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AddLoanForm } from "./add-loan-form";
+import { addDocumentNonBlocking, updateDocumentNonBlocking, useFirebase } from "@/firebase";
 
 type LoansClientProps = {
   loans: Loan[];
   products: Product[];
 };
 
-export default function LoansClient({ loans: initialLoans, products }: LoansClientProps) {
-  const [loans, setLoans] = useState<Loan[]>(initialLoans);
+export default function LoansClient({ loans, products }: LoansClientProps) {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const { toast } = useToast();
+  const { firestore } = useFirebase();
 
   const handleAddLoan = (newLoanData: Omit<Loan, 'id' | 'status'>) => {
-    const newLoan: Loan = {
-      ...newLoanData,
-      id: `LOAN${(Math.random() * 1000).toFixed(0).padStart(3, '0')}`,
-      status: 'Prestado',
-    };
-    setLoans([newLoan, ...loans]);
-    toast({
-      title: "Éxito",
-      description: `El préstamo para "${newLoan.productName}" ha sido registrado.`,
-    });
-    setIsAddDialogOpen(false);
+    if (firestore) {
+      const newLoan: Omit<Loan, 'id'> = {
+        ...newLoanData,
+        status: 'Prestado',
+      };
+      const loansCollection = collection(firestore, "loans");
+      addDocumentNonBlocking(loansCollection, newLoan);
+      toast({
+        title: "Éxito",
+        description: `El préstamo para "${newLoan.productName}" ha sido registrado.`,
+      });
+      setIsAddDialogOpen(false);
+    }
   };
   
   const handleMarkAsReturned = (loanId: string) => {
-    setLoans(loans.map(loan => 
-      loan.id === loanId ? { ...loan, status: 'Devuelto' } : loan
-    ));
-    toast({
-        title: "Actualizado",
-        description: "El préstamo ha sido marcado como devuelto.",
-    });
+    if (firestore) {
+        const loanRef = doc(firestore, 'loans', loanId);
+        updateDocumentNonBlocking(loanRef, { status: 'Devuelto' });
+        toast({
+            title: "Actualizado",
+            description: "El préstamo ha sido marcado como devuelto.",
+        });
+    }
   };
 
   return (

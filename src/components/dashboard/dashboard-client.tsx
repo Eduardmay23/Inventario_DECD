@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis } from "recharts";
 import { AlertTriangle, Bot, Loader2, Package, Warehouse } from "lucide-react";
 
-import type { Product, StockLog } from "@/lib/types";
+import type { Loan, Product, StockLog } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,7 @@ import {
 
 type DashboardClientProps = {
   inventoryData: Product[];
-  recentChanges: StockLog[];
+  recentChanges: Loan[];
 };
 
 const chartConfig = {
