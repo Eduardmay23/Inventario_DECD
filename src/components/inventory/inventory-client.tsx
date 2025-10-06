@@ -255,7 +255,7 @@ export default function InventoryClient({ data }: { data: Product[] }) {
             <AlertDialogDescription>
               Esta acción no se puede deshacer. Esto eliminará permanentemente el
               producto "{productToDelete?.name}" de tus datos de inventario.
-            </DialogDescription>
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
