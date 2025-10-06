@@ -1,0 +1,101 @@
+/**
+ * @fileoverview Firestore Security Rules for StockWise.
+ *
+ * Core Philosophy:
+ * This ruleset provides public read access to all collections and allows all authenticated users to create, update, and delete documents.
+ *
+ * Data Structure:
+ * The database consists of several top-level collections: 'categories', 'products', 'stock_levels', 'locations', 'stock_alerts', and 'stock_movements'.
+ *
+ * Key Security Decisions:
+ * - Public read access for all collections.
+ * - Unrestricted write access for all authenticated users.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * @description Grants public read access and authenticated write access to the 'categories' collection.
+     * @path /categories/{categoryId}
+     * @allow (get, list): Any user can read a category.
+     * @allow (create, update, delete): Any authenticated user can create, update, or delete a category.
+     * @deny (create, update, delete): An unauthenticated user cannot create, update, or delete a category.
+     * @principle Allows any user to create, read, update, and delete categories.
+     */
+    match /categories/{categoryId} {
+      allow get, list: if true;
+      allow create, update, delete: if isSignedIn();
+    }
+
+    /**
+     * @description Grants public read access and authenticated write access to the 'products' collection.
+     * @path /products/{productId}
+     * @allow (get, list): Any user can read a product.
+     * @allow (create, update, delete): Any authenticated user can create, update, or delete a product.
+     * @deny (create, update, delete): An unauthenticated user cannot create, update, or delete a product.
+     * @principle Allows any user to create, read, update, and delete products.
+     */
+    match /products/{productId} {
+      allow get, list: if true;
+      allow create, update, delete: if isSignedIn();
+    }
+
+    /**
+     * @description Grants public read access and authenticated write access to the 'stock_levels' collection.
+     * @path /stock_levels/{stockLevelId}
+     * @allow (get, list): Any user can read a stock level.
+     * @allow (create, update, delete): Any authenticated user can create, update, or delete a stock level.
+     * @deny (create, update, delete): An unauthenticated user cannot create, update, or delete a stock level.
+     * @principle Allows any user to create, read, update, and delete stock levels.
+     */
+    match /stock_levels/{stockLevelId} {
+      allow get, list: if true;
+      allow create, update, delete: if isSignedIn();
+    }
+
+    /**
+     * @description Grants public read access and authenticated write access to the 'locations' collection.
+     * @path /locations/{locationId}
+     * @allow (get, list): Any user can read a location.
+     * @allow (create, update, delete): Any authenticated user can create, update, or delete a location.
+     * @deny (create, update, delete): An unauthenticated user cannot create, update, or delete a location.
+     * @principle Allows any user to create, read, update, and delete locations.
+     */
+    match /locations/{locationId} {
+      allow get, list: if true;
+      allow create, update, delete: if isSignedIn();
+    }
+
+    /**
+     * @description Grants public read access and authenticated write access to the 'stock_alerts' collection.
+     * @path /stock_alerts/{stockAlertId}
+     * @allow (get, list): Any user can read a stock alert.
+     * @allow (create, update, delete): Any authenticated user can create, update, or delete a stock alert.
+     * @deny (create, update, delete): An unauthenticated user cannot create, update, or delete a stock alert.
+     * @principle Allows any user to create, read, update, and delete stock alerts.
+     */
+    match /stock_alerts/{stockAlertId} {
+      allow get, list: if true;
+      allow create, update, delete: if isSignedIn();
+    }
+
+    /**
+     * @description Grants public read access and authenticated write access to the 'stock_movements' collection.
+     * @path /stock_movements/{stockMovementId}
+     * @allow (get, list): Any user can read a stock movement.
+     * @allow (create, update, delete): Any authenticated user can create, update, or delete a stock movement.
+     * @deny (create, update, delete): An unauthenticated user cannot create, update, or delete a stock movement.
+     * @principle Allows any user to create, read, update, and delete stock movements.
+     */
+    match /stock_movements/{stockMovementId} {
+      allow get, list: if true;
+      allow create, update, delete: if isSignedIn();
+    }
+
+    // Helper function to determine if a user is signed in.
+    function isSignedIn() {
+      return request.auth != null;
+    }
+  }
+}
