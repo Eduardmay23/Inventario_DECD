@@ -6,6 +6,7 @@ export type Product = {
   quantity: number;
   location: string;
   reorderPoint: number;
+  imageUrl: string;
 };
 
 export type StockLog = {
