@@ -12,17 +12,8 @@
   .print-hide {
     display: none !important;
   }
-
-  body * {
-    visibility: hidden;
-  }
   
-  #printable-receipt, #printable-receipt * {
-    visibility: visible;
-  }
-
   #printable-receipt {
-    position: static;
     display: flex;
     flex-direction: column;
     height: 100%;
