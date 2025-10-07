@@ -205,7 +205,7 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
                           ))
                         ) : (
                           <TableRow>
-                            <TableCell colSpan={5} className="h-24 text-center">
+                            <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
                               No hay préstamos registrados.
                             </TableCell>
                           </TableRow>
