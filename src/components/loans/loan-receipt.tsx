@@ -18,7 +18,11 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
 
   return (
     <>
-      <div id="printable-receipt" className="receipt-container bg-white text-black font-sans">
+      <div 
+        id="printable-receipt" 
+        className="receipt-container bg-white text-black font-sans"
+        style={{ transform: 'scale(1.2)', transformOrigin: 'top left' }}
+      >
         <header className="flex justify-between items-center pb-4 border-b-2" style={{ borderColor: '#C0A0A0' }}>
           <div className="flex items-center justify-start w-1/4">
             <Image src="https://escarcega.gob.mx/escarcega.png" alt="Escudo de Escárcega" width={120} height={120} data-ai-hint="logo government" />
