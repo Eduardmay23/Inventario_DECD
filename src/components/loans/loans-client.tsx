@@ -123,37 +123,36 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
 
   return (
     <>
-      <div className="printable-content">
-        <div className="print-hide">
-          <AppHeader title="Préstamos">
-            <div className="flex items-center gap-2">
-                <Button size="sm" onClick={() => setIsAddDialogOpen(true)}>
-                    <PlusCircle className="h-4 w-4 mr-2" />
-                    Registrar Préstamo
-                </Button>
-            </div>
-          </AppHeader>
-          <main className="flex-1 p-4 md:p-6">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Historial de Préstamos</CardTitle>
-                    <CardDescription>Gestiona los productos prestados a equipos o personal.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="overflow-x-auto">
-                        <Table>
-                            <TableHeader>
-                            <TableRow>
-                                <TableHead>Producto</TableHead>
-                                <TableHead>Solicitante</TableHead>
-                                <TableHead>Fecha de Préstamo</TableHead>
-                                <TableHead>Estado</TableHead>
-                                <TableHead>
-                                <span className="sr-only">Acciones</span>
-                                </TableHead>
-                            </TableRow>
-                            </TableHeader>
-                            <TableBody>
+      <div className="print-hide">
+        <AppHeader title="Préstamos">
+          <div className="flex items-center gap-2">
+              <Button size="sm" onClick={() => setIsAddDialogOpen(true)}>
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  Registrar Préstamo
+              </Button>
+          </div>
+        </AppHeader>
+        <main className="flex-1 p-4 md:p-6">
+          <Card>
+              <CardHeader>
+                  <CardTitle>Historial de Préstamos</CardTitle>
+                  <CardDescription>Gestiona los productos prestados a equipos o personal.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                  <div className="overflow-x-auto">
+                      <Table>
+                          <TableHeader>
+                          <TableRow>
+                              <TableHead>Producto</TableHead>
+                              <TableHead>Solicitante</TableHead>
+                              <TableHead>Fecha de Préstamo</TableHead>
+                              <TableHead>Estado</TableHead>
+                              <TableHead>
+                              <span className="sr-only">Acciones</span>
+                              </TableHead>
+                          </TableRow>
+                          </TableHeader>
+                          <TableBody>
                             {loans.length > 0 ? (
                               loans.map((loan) => (
                                 <TableRow key={loan.id}>
@@ -212,17 +211,15 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
                                 </TableCell>
                               </TableRow>
                             )}
-                            </TableBody>
-                        </Table>
-                    </div>
-                </CardContent>
-            </Card>
-          </main>
-        </div>
-        <div className="print-only">
-          {loanToPrint && <LoanReceipt loan={loanToPrint} />}
-        </div>
+                          </TableBody>
+                      </Table>
+                  </div>
+              </CardContent>
+          </Card>
+        </main>
       </div>
+      
+      {loanToPrint && <LoanReceipt loan={loanToPrint} className="print-only" />}
 
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
