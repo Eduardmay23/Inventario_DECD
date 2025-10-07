@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useRef } from 'react';
+import { useRef } from 'react';
 import type { Loan } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
@@ -10,15 +10,11 @@ import Image from 'next/image';
 import { useReactToPrint } from 'react-to-print';
 
 export function LoanReceipt({ loan }: { loan: Loan }) {
-  const [entregadoPor, setEntregadoPor] = useState('');
-  const [recibidoPor, setRecibidoPor] = useState('');
-
   const componentRef = useRef(null);
 
   const handlePrint = useReactToPrint({
     content: () => componentRef.current,
     documentTitle: `comprobante-${loan.productName.replace(/ /g, '_')}`,
-    onAfterPrint: () => console.log('printed'),
   });
 
   return (
@@ -57,20 +53,18 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
 
                 <div className="mt-24 grid grid-cols-2 gap-8 pt-12">
                     <div className="text-center">
-                        <div className="w-3/4 mx-auto border-b border-gray-400 h-8"></div>
                         <input
                         type="text"
                         placeholder="Nombre y Firma"
-                        className="w-3/4 mx-auto border-0 text-center text-sm focus:outline-none focus:ring-0 bg-transparent mt-1"
+                        className="w-3/4 mx-auto border-0 border-b border-gray-400 text-center text-sm focus:outline-none focus:ring-0 bg-transparent"
                         />
                         <p className="mt-1 text-sm font-semibold">Entregado por</p>
                     </div>
                     <div className="text-center">
-                        <div className="w-3/4 mx-auto border-b border-gray-400 h-8"></div>
                         <input
                         type="text"
                         placeholder="Nombre y Firma"
-                        className="w-3/4 mx-auto border-0 text-center text-sm focus:outline-none focus:ring-0 bg-transparent mt-1"
+                        className="w-3/4 mx-auto border-0 border-b border-gray-400 text-center text-sm focus:outline-none focus:ring-0 bg-transparent"
                         />
                         <p className="mt-1 text-sm font-semibold">Recibido por</p>
                     </div>
