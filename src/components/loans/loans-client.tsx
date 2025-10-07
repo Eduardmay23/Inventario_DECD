@@ -232,7 +232,7 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
       </AlertDialog>
 
       <Dialog open={isReceiptDialogOpen} onOpenChange={setIsReceiptDialogOpen}>
-        <DialogContent className="max-w-3xl print:max-w-none">
+        <DialogContent className="max-w-3xl">
           <DialogHeader className="print-hide">
             <DialogTitle>Comprobante de Préstamo</DialogTitle>
             <DialogDescription>

@@ -17,7 +17,7 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
   };
 
   return (
-    <div>
+    <>
       <div id="printable-receipt" className="receipt-container bg-white text-black font-sans">
         <header className="flex justify-between items-center pb-4 border-b-2" style={{ borderColor: '#C0A0A0' }}>
           <div className="flex items-center justify-start w-1/4">
@@ -52,7 +52,7 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
           </div>
         </main>
 
-        <div className="grid grid-cols-2 gap-8 pt-12">
+        <footer className="grid grid-cols-2 gap-8 pt-12">
             <div className="text-center">
               <div className="border-t border-gray-400 w-3/4 mx-auto mb-2">&nbsp;</div>
               <p className="text-sm font-semibold">Entregado por</p>
@@ -75,12 +75,12 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
                 onChange={(e) => setRecibidoPor(e.target.value)}
               />
             </div>
-          </div>
+          </footer>
       </div>
 
       <div className="p-6 bg-gray-50 flex justify-end print-hide">
         <Button onClick={handlePrint}>Imprimir Comprobante</Button>
       </div>
-    </div>
+    </>
   );
 }
