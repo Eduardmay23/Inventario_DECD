@@ -210,9 +210,6 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
         </Card>
       </main>
 
-      {/* This component will only be rendered to be available for printing */}
-      {/* {loanToPrint && <LoanReceipt loan={loanToPrint} className="print-only" />} */}
-
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -242,19 +239,19 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
         </AlertDialogContent>
       </AlertDialog>
 
-      <Dialog open={isReceiptDialogOpen} onOpenChange={setIsReceiptDialogOpen}>
-        <DialogContent className="w-full max-w-3xl">
-            <DialogHeader className="print-hide">
-                <DialogTitle>Vista Previa del Comprobante</DialogTitle>
-                <DialogDescription>
-                    Así es como se verá tu comprobante. Puedes editar los campos de "Entregado por" y "Recibido por" antes de imprimir.
-                </DialogDescription>
-            </DialogHeader>
-            {loanToPrint && <LoanReceipt loan={loanToPrint} />}
-            <DialogFooter className="print-hide">
-                <Button variant="outline" onClick={() => setIsReceiptDialogOpen(false)}>Cancelar</Button>
-                <Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4" />Imprimir</Button>
-            </DialogFooter>
+      <Dialog open={isReceiptDialogOpen} onOpenChange={setIsReceiptDialogOpen} >
+        <DialogContent className="printable-receipt w-full max-w-3xl" >
+          <DialogHeader className="print-hide">
+            <DialogTitle>Vista Previa del Comprobante</DialogTitle>
+            <DialogDescription>
+              Así es como se verá tu comprobante. Puedes editar los campos de "Entregado por" y "Recibido por" antes de imprimir.
+            </DialogDescription>
+          </DialogHeader>
+          {loanToPrint && <LoanReceipt loan={loanToPrint} />}
+          <DialogFooter className="print-hide">
+            <Button variant="outline" onClick={() => setIsReceiptDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4" />Imprimir</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>

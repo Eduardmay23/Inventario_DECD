@@ -1,35 +1,33 @@
 @media print {
-  body * {
-    visibility: hidden;
+  .printable-content > *:not(.printable-receipt) {
+    display: none !important;
   }
 
-  .loan-receipt, .loan-receipt * {
-    visibility: visible;
-  }
-
-  .loan-receipt {
+  .printable-receipt {
+    display: block !important;
     position: absolute;
-    left: 0;
     top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
     margin: 0;
-    padding: 1in;
-    border: none;
-    box-shadow: none;
+    padding: 0;
   }
 
+  .printable-receipt > [role="dialog"] {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 1in !important;
+    transform: none !important;
+  }
+  
   .print-hide {
     display: none !important;
-  }
-}
-
-.print-only {
-  display: none !important;
-}
-
-@media print {
-  .print-only {
-    display: block !important;
   }
 }
