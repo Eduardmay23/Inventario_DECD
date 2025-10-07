@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import type { Loan } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
