@@ -266,9 +266,7 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
         </Dialog>
       </div>
 
-      <div className="print-only">
-        {loanToPrint && <LoanReceipt loan={loanToPrint} />}
-      </div>
+      {loanToPrint && <LoanReceipt loan={loanToPrint} />}
     </>
   );
 }
