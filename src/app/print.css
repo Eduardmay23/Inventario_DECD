@@ -16,6 +16,9 @@
   /* Asegura que el contenido del diálogo no cause overflow y oculte las barras de scroll */
   .dialog-content {
     overflow: visible !important;
+    background: none !important;
+    box-shadow: none !important;
+    border: none !important;
   }
 
   /* Asegura que el recibo ocupe la página completa y distribuye el contenido */
@@ -25,9 +28,9 @@
     justify-content: space-between;
     height: 100vh;
     padding: 1.5rem;
-    box-shadow: none;
-    border: none;
     font-size: 14px;
     background: none;
+    box-shadow: none;
+    border: none;
   }
 }
