@@ -114,9 +114,9 @@
     margin: 0;
     padding: 1.5rem;
     box-sizing: border-box;
-    font-size: 18px;
     display: flex;
     flex-direction: column;
+    zoom: 1.25;
   }
 
   #printable-receipt > header img:first-child {
