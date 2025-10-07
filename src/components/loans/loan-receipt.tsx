@@ -11,7 +11,7 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
   return (
     <div 
       id="printable-receipt" 
-      className="receipt-container font-sans text-foreground"
+      className="receipt-container font-sans text-foreground p-6 rounded-lg"
     >
       <header className="flex justify-between items-center pb-4 border-b-2 border-gray-300">
         <div className="flex items-center justify-start">
@@ -44,9 +44,8 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
             <p>{format(new Date(loan.loanDate), "d 'de' MMMM, yyyy", { locale: es })}</p>
           </div>
         </div>
-      </main>
 
-      <footer className="grid grid-cols-2 gap-8 pt-12">
+        <footer className="grid grid-cols-2 gap-8 pt-12">
           <div className="text-center">
             <div className="border-t border-gray-400 w-3/4 mx-auto mb-2">&nbsp;</div>
             <p className="text-sm font-semibold">Entregado por</p>
@@ -58,6 +57,7 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
             <p className="text-xs text-gray-500 mt-2">Nombre de quien recibe</p>
           </div>
         </footer>
+      </main>
     </div>
   );
 }
