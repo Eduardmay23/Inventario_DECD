@@ -21,7 +21,7 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
       <div 
         id="printable-receipt" 
         className="receipt-container bg-white text-black font-sans"
-        style={{ transform: 'scale(1.2)', transformOrigin: 'top left' }}
+        style={{ transform: 'scale(1.1)', transformOrigin: 'top left' }}
       >
         <header className="flex justify-between items-center pb-4 border-b-2" style={{ borderColor: '#C0A0A0' }}>
           <div className="flex items-center justify-start w-1/4">
