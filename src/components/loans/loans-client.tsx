@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from "react";
-import { PlusCircle, MoreHorizontal, CheckCircle, Trash2 } from "lucide-react";
+import { PlusCircle, MoreHorizontal, CheckCircle, Trash2, Printer } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { collection, doc } from "firebase/firestore";
@@ -48,6 +48,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AddLoanForm } from "./add-loan-form";
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking, useFirebase } from "@/firebase";
+import { LoanReceipt } from "./loan-receipt";
 
 type LoansClientProps = {
   loans: Loan[];
@@ -57,7 +58,9 @@ type LoansClientProps = {
 export default function LoansClient({ loans, products }: LoansClientProps) {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isReceiptDialogOpen, setIsReceiptDialogOpen] = useState(false);
   const [loanToDelete, setLoanToDelete] = useState<Loan | null>(null);
+  const [loanToPrint, setLoanToPrint] = useState<Loan | null>(null);
   const { toast } = useToast();
   const { firestore } = useFirebase();
 
@@ -91,6 +94,11 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
   const handleDeleteClick = (loan: Loan) => {
     setLoanToDelete(loan);
     setIsDeleteDialogOpen(true);
+  };
+
+  const handlePrintClick = (loan: Loan) => {
+    setLoanToPrint(loan);
+    setIsReceiptDialogOpen(true);
   };
 
   const confirmDelete = () => {
@@ -165,6 +173,9 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                     <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                                    <DropdownMenuItem onSelect={() => handlePrintClick(loan)}>
+                                      <Printer className="mr-2 h-4 w-4" /> Imprimir Comprobante
+                                    </DropdownMenuItem>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem 
                                         onSelect={() => handleMarkAsReturned(loan.id)}
@@ -209,7 +220,7 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
             <AlertDialogTitle>¿Estás absolutamente seguro?</AlertDialogTitle>
             <AlertDialogDescription>
               Esta acción no se puede deshacer. Esto eliminará permanentemente el préstamo del producto "{loanToDelete?.productName}".
-            </AlertDialogDescription>
+            </description>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
@@ -219,6 +230,18 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={isReceiptDialogOpen} onOpenChange={setIsReceiptDialogOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Comprobante de Préstamo</DialogTitle>
+            <DialogDescription>
+              Imprime este comprobante para mantener un registro físico.
+            </DialogDescription>
+          </DialogHeader>
+          {loanToPrint && <LoanReceipt loan={loanToPrint} />}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
