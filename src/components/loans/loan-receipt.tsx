@@ -55,24 +55,26 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
 
                 <div className="mt-24 grid grid-cols-2 gap-8 pt-12">
                     <div className="text-center">
+                        <div className="border-b border-gray-400 w-3/4 mx-auto">&nbsp;</div>
+                        <p className="mt-2 text-sm font-semibold">Entregado por</p>
                         <input
                         type="text"
-                        placeholder="Nombre y Firma"
-                        className="w-3/4 mx-auto border-0 border-b border-gray-400 text-center text-sm focus:outline-none focus:ring-0 bg-transparent"
+                        placeholder="Nombre de quien entrega"
+                        className="w-3/4 mx-auto border-0 text-center text-sm focus:outline-none focus:ring-0 bg-transparent text-gray-500"
                         value={entregadoPor}
                         onChange={(e) => setEntregadoPor(e.target.value)}
                         />
-                        <p className="mt-1 text-sm font-semibold">Entregado por</p>
                     </div>
                     <div className="text-center">
-                        <input
+                        <div className="border-b border-gray-400 w-3/4 mx-auto">&nbsp;</div>
+                        <p className="mt-2 text-sm font-semibold">Recibido por</p>
+                         <input
                         type="text"
-                        placeholder="Nombre y Firma"
-                        className="w-3/4 mx-auto border-0 border-b border-gray-400 text-center text-sm focus:outline-none focus:ring-0 bg-transparent"
+                        placeholder="Nombre de quien recibe"
+                        className="w-3/4 mx-auto border-0 text-center text-sm focus:outline-none focus:ring-0 bg-transparent text-gray-500"
                         value={recibidoPor}
                         onChange={(e) => setRecibidoPor(e.target.value)}
                         />
-                        <p className="mt-1 text-sm font-semibold">Recibido por</p>
                     </div>
                 </div>
             </main>
