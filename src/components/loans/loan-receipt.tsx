@@ -5,14 +5,14 @@ import type { Loan } from '@/lib/types';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Image from 'next/image';
+import { Input } from '@/components/ui/input';
 
 export function LoanReceipt({ loan }: { loan: Loan }) {
+  const [entregadoPor, setEntregadoPor] = React.useState('');
+  const [recibidoPor, setRecibidoPor] = React.useState('');
   
   return (
-    <div 
-      id="printable-receipt" 
-      className="font-sans text-foreground"
-    >
+    <div className="font-sans text-foreground">
       <header className="grid grid-cols-3 items-center pb-4 border-b border-gray-400">
         <div className="flex justify-start">
           <Image src="https://escarcega.gob.mx/escarcega.png" alt="Escudo de Escárcega" width={100} height={100} data-ai-hint="logo government" />
@@ -50,12 +50,28 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
         <div className="text-center">
           <div className="border-t border-gray-400 w-3/4 mx-auto mb-2">&nbsp;</div>
           <p className="text-sm font-semibold">Entregado por</p>
-          <p className="text-xs text-gray-500 mt-1">Nombre de quien entrega</p>
+          <div className="mt-1">
+            <Input 
+              placeholder="Nombre de quien entrega" 
+              className="print-hide border-0 text-center focus-visible:ring-0" 
+              value={entregadoPor}
+              onChange={(e) => setEntregadoPor(e.target.value)}
+            />
+            <p className="print-only text-xs text-gray-500">{entregadoPor || ' '}</p>
+          </div>
         </div>
         <div className="text-center">
           <div className="border-t border-gray-400 w-3/4 mx-auto mb-2">&nbsp;</div>
           <p className="text-sm font-semibold">Recibido por</p>
-          <p className="text-xs text-gray-500 mt-1">Nombre de quien recibe</p>
+          <div className="mt-1">
+            <Input 
+              placeholder="Nombre de quien recibe" 
+              className="print-hide border-0 text-center focus-visible:ring-0"
+              value={recibidoPor}
+              onChange={(e) => setRecibidoPor(e.target.value)}
+            />
+             <p className="print-only text-xs text-gray-500">{recibidoPor || ' '}</p>
+          </div>
         </div>
       </footer>
     </div>

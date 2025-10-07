@@ -3,21 +3,24 @@
     background: none !important;
   }
 
-  /* Oculta los elementos que no deben imprimirse */
   .print-hide {
     display: none !important;
   }
-
-  /* Oculta específicamente el botón de cierre 'X' del diálogo de ShadCN */
-  [role="dialog"] button[aria-label="Close"] {
-    display: none !important;
+  
+  .print-only {
+    display: block !important;
+    visibility: visible !important;
   }
 
-  /* Asegura que el contenido del diálogo no cause overflow y oculte las barras de scroll */
   .dialog-content {
     overflow: visible !important;
     background: none !important;
     box-shadow: none !important;
     border: none !important;
+    padding: 0 !important;
   }
+}
+
+.print-only {
+  display: none !important;
 }
