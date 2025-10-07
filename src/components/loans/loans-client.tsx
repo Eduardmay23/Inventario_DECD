@@ -237,17 +237,11 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
       </AlertDialog>
 
       <Dialog open={isReceiptDialogOpen} onOpenChange={setIsReceiptDialogOpen}>
-        <DialogContent className="w-full max-w-3xl p-6">
-          <DialogHeader className="print-hide">
-            <DialogTitle>Comprobante de Préstamo</DialogTitle>
-            <DialogDescription>
-              Revisa el comprobante y rellena los nombres antes de imprimir.
-            </DialogDescription>
-          </DialogHeader>
+        <DialogContent className="w-full max-w-3xl border-none bg-transparent p-0 shadow-none">
           <div className="py-4">
             {loanToPrint && <LoanReceipt loan={loanToPrint} />}
           </div>
-          <DialogFooter className="print-hide">
+          <DialogFooter className="print-hide justify-center">
             <Button variant="outline" onClick={() => setIsReceiptDialogOpen(false)}>Cancelar</Button>
             <Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4" />Imprimir</Button>
           </DialogFooter>

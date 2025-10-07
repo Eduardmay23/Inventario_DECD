@@ -12,7 +12,7 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
   const [recibidoPor, setRecibidoPor] = React.useState('');
   
   return (
-    <div className="font-sans text-foreground">
+    <div className="font-sans text-foreground bg-background p-10">
       <header className="grid grid-cols-3 items-center pb-4 border-b border-gray-400">
         <div className="flex justify-start">
           <Image src="https://escarcega.gob.mx/escarcega.png" alt="Escudo de Escárcega" width={100} height={100} data-ai-hint="logo government" />
