@@ -89,11 +89,6 @@
   body {
     -webkit-print-color-adjust: exact;
     color-adjust: exact;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    padding-top: 2rem;
-    padding-bottom: 2rem;
   }
   body * {
     visibility: hidden;
@@ -102,6 +97,9 @@
     visibility: visible;
   }
   #printable-receipt {
+    position: absolute;
+    left: 0;
+    top: 0;
     width: 100%;
     max-width: 210mm; /* Ancho de A4 */
     margin: 0 auto;
