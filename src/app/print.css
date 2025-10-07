@@ -11,6 +11,40 @@
     display: block !important;
     visibility: visible !important;
   }
+
+  /* Make the receipt take up the full page */
+  body, html {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  #printable-receipt-container {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    padding: 2rem; /* Add some padding for the print layout */
+    border: none;
+    box-shadow: none;
+    background: white;
+  }
+
+  /* Ensure parents of the dialog are transparent */
+  [role="dialog"] {
+    position: static;
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+
+  [data-radix-overlay] {
+    display: none;
+  }
 }
 
 .print-only {

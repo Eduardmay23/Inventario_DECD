@@ -237,7 +237,7 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
       </AlertDialog>
 
       <Dialog open={isReceiptDialogOpen} onOpenChange={setIsReceiptDialogOpen}>
-        <DialogContent className="w-full max-w-3xl border-none bg-transparent p-0 shadow-none">
+        <DialogContent id="printable-receipt-container" className="w-full max-w-3xl border-none bg-transparent p-0 shadow-none">
           <DialogHeader>
             <DialogTitle className="sr-only">Comprobante de Préstamo</DialogTitle>
           </DialogHeader>
