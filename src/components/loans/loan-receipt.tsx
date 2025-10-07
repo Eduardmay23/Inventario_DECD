@@ -56,7 +56,6 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
                     <p className="mt-1 text-sm font-semibold">Entregado por</p>
                     <input
                       type="text"
-                      value={entregadoPor}
                       onChange={(e) => setEntregadoPor(e.target.value)}
                       placeholder="Nombre y Firma"
                       className="w-3/4 mx-auto border-0 text-center text-sm focus:outline-none focus:ring-0 bg-transparent"
@@ -67,7 +66,6 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
                     <p className="mt-1 text-sm font-semibold">Recibido por</p>
                     <input
                       type="text"
-                      value={recibidoPor}
                       onChange={(e) => setRecibidoPor(e.target.value)}
                       placeholder="Nombre y Firma"
                       className="w-3/4 mx-auto border-0 text-center text-sm focus:outline-none focus:ring-0 bg-transparent"
@@ -98,15 +96,18 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
             top: 0;
             width: 100%;
           }
+          .print\\:hidden {
+            display: none;
+          }
           input {
             border: none !important;
           }
           .border-b {
-            border-bottom: 1px solid #9ca3af !important;
+            border-bottom-width: 1px !important;
+            border-color: #9ca3af !important;
           }
         }
         input {
-          border: none;
           background-color: transparent;
         }
       `}</style>
