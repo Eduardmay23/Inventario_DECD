@@ -1,10 +1,14 @@
 @media print {
-  .printable-content > *:not(.printable-receipt) {
+  body > *:not(.printable-receipt) {
     display: none !important;
   }
 
-  .printable-receipt {
+  .printable-receipt, .printable-receipt * {
     display: block !important;
+    visibility: visible !important;
+  }
+
+  .printable-receipt {
     position: absolute;
     top: 0;
     left: 0;
@@ -12,10 +16,11 @@
     height: 100%;
     margin: 0;
     padding: 0;
+    background: white;
+    z-index: 9999;
   }
 
   .printable-receipt > [role="dialog"] {
-    display: block !important;
     width: 100% !important;
     max-width: 100% !important;
     height: 100% !important;
@@ -29,5 +34,9 @@
   
   .print-hide {
     display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
   }
 }
