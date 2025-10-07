@@ -9,6 +9,7 @@ import { es } from 'date-fns/locale';
 import Image from 'next/image';
 import { useReactToPrint } from 'react-to-print';
 
+// 1. El contenido a imprimir se define en un componente separado que usa forwardRef.
 const PrintableContent = React.forwardRef<HTMLDivElement, { loan: Loan; entregadoPor: string; recibidoPor: string; }>((props, ref) => {
     const { loan, entregadoPor, recibidoPor } = props;
   
@@ -84,6 +85,7 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
   const [entregadoPor, setEntregadoPor] = useState('');
   const [recibidoPor, setRecibidoPor] = useState('');
 
+  // 2. El hook 'useReactToPrint' devuelve una función para manejar la impresión.
   const handlePrint = useReactToPrint({
     content: () => componentRef.current,
     documentTitle: `comprobante-${loan.productName.replace(/ /g, '_')}`,
@@ -91,10 +93,12 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
 
   return (
     <div>
-        <div className="hidden">
+        {/* 3. El componente a imprimir se renderiza aquí, pero oculto. */}
+        <div style={{ display: 'none' }}>
             <PrintableContent ref={componentRef} loan={loan} entregadoPor={entregadoPor} recibidoPor={recibidoPor} />
         </div>
 
+        {/* El resto de tu componente se mantiene exactamente igual */}
         <div className="bg-white text-black p-8">
             <header className="flex justify-between items-center pb-4 border-b-4" style={{borderColor: '#C0A0A0'}}>
                 <div className="flex items-center justify-start w-1/3">
@@ -157,6 +161,7 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
             </footer>
         </div>
 
+        {/* 4. El botón visible ahora solo llama a handlePrint en su onClick. */}
         <div className="p-6 bg-gray-50 flex justify-end">
             <Button onClick={handlePrint}>Imprimir Comprobante</Button>
         </div>
