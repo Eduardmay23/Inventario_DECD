@@ -31,6 +31,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -112,6 +113,10 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
       setLoanToDelete(null);
     }
     setIsDeleteDialogOpen(false);
+  };
+
+  const handlePrint = () => {
+    window.print();
   };
 
   return (
@@ -233,13 +238,17 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
 
       <Dialog open={isReceiptDialogOpen} onOpenChange={setIsReceiptDialogOpen}>
         <DialogContent className="max-w-3xl">
-          <DialogHeader>
+          <DialogHeader className="print-hide">
             <DialogTitle>Comprobante de Préstamo</DialogTitle>
             <DialogDescription>
-              Imprime este comprobante para mantener un registro físico.
+              Revisa el comprobante antes de imprimir.
             </DialogDescription>
           </DialogHeader>
           {loanToPrint && <LoanReceipt loan={loanToPrint} />}
+          <DialogFooter className="print-hide">
+            <Button variant="outline" onClick={() => setIsReceiptDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4" />Imprimir</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>
