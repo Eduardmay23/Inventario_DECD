@@ -244,9 +244,7 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
               Revisa el comprobante antes de imprimir.
             </DialogDescription>
           </DialogHeader>
-          <div className="pt-6">
-            {loanToPrint && <LoanReceipt loan={loanToPrint} />}
-          </div>
+          {loanToPrint && <LoanReceipt loan={loanToPrint} />}
           <DialogFooter className="print-hide">
             <Button variant="outline" onClick={() => setIsReceiptDialogOpen(false)}>Cancelar</Button>
             <Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4" />Imprimir</Button>
