@@ -56,20 +56,20 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
                       type="text"
                       value={entregadoPor}
                       onChange={(e) => setEntregadoPor(e.target.value)}
-                      placeholder="(Nombre y Firma)"
-                      className="w-3/4 mx-auto border-t border-b-0 border-x-0 border-gray-400 text-center text-sm focus:outline-none focus:ring-0 print:border-t"
+                      placeholder="Nombre y Firma"
+                      className="w-3/4 mx-auto border-t-0 border-b border-x-0 border-gray-400 text-center text-sm focus:outline-none focus:ring-0 print:border-b"
                     />
-                    <p className="mt-2 text-sm">Entregado Por:</p>
+                    <p className="mt-2 text-sm font-semibold">Entregado por</p>
                 </div>
                 <div className="text-center">
                     <input
                       type="text"
                       value={recibidoPor}
                       onChange={(e) => setRecibidoPor(e.target.value)}
-                      placeholder="(Nombre y Firma)"
-                      className="w-3/4 mx-auto border-t border-b-0 border-x-0 border-gray-400 text-center text-sm focus:outline-none focus:ring-0 print:border-t"
+                      placeholder="Nombre y Firma"
+                      className="w-3/4 mx-auto border-t-0 border-b border-x-0 border-gray-400 text-center text-sm focus:outline-none focus:ring-0 print:border-b"
                     />
-                    <p className="mt-2 text-sm">Recibido Por:</p>
+                    <p className="mt-2 text-sm font-semibold">Recibido por</p>
                 </div>
             </div>
         </main>
