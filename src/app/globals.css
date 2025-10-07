@@ -80,3 +80,51 @@
     @apply bg-background text-foreground;
   }
 }
+
+@media print {
+  body > * {
+    display: none !important;
+  }
+  
+  body > [role="dialog"] {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    height: 100% !important;
+    inset: auto !important;
+    transform: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: flex !important;
+    justify-content: center;
+    align-items: flex-start;
+  }
+
+  [role="dialog"] > * {
+     display: block !important;
+  }
+
+  #printable-receipt {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 2rem;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  .print-hide {
+    display: none !important;
+  }
+
+  .print-input {
+    color: black !important;
+    -webkit-print-color-adjust: exact;
+  }
+  
+  .print-input::placeholder {
+    color: transparent !important;
+  }
+}
