@@ -80,3 +80,28 @@
     @apply bg-background text-foreground;
   }
 }
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #printable-receipt, #printable-receipt * {
+    visibility: visible;
+  }
+  #printable-receipt {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .print-hide {
+      display: none;
+  }
+  .print-input-value {
+    border: none !important;
+    background-color: transparent !important;
+    -webkit-print-color-adjust: exact;
+    color-adjust: exact;
+  }
+}
