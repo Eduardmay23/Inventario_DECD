@@ -9,7 +9,7 @@ import { es } from 'date-fns/locale';
 import Image from 'next/image';
 import { useReactToPrint } from 'react-to-print';
 
-// 1. Componente que contiene el contenido a imprimir.
+// Componente que contiene el contenido a imprimir.
 // Se usa React.forwardRef para que react-to-print pueda obtener la referencia del DOM.
 const PrintableContent = React.forwardRef<HTMLDivElement, { loan: Loan; entregadoPor: string; recibidoPor: string; }>((props, ref) => {
     const { loan, entregadoPor, recibidoPor } = props;
@@ -48,16 +48,30 @@ const PrintableContent = React.forwardRef<HTMLDivElement, { loan: Loan; entregad
                 </div>
 
                 <div className="mt-24 grid grid-cols-2 gap-8 pt-12">
-                    <div className="text-center">
-                        <div className="border-b border-gray-400 w-3/4 mx-auto">&nbsp;</div>
-                        <p className="mt-2 text-sm font-semibold">Entregado por</p>
-                        <p className="text-sm text-gray-500 h-6">{entregadoPor}</p>
-                    </div>
-                    <div className="text-center">
-                        <div className="border-b border-gray-400 w-3/4 mx-auto">&nbsp;</div>
-                        <p className="mt-2 text-sm font-semibold">Recibido por</p>
-                        <p className="text-sm text-gray-500 h-6">{recibidoPor}</p>
-                    </div>
+                <div className="text-center">
+                    <div className="border-b border-gray-400 w-3/4 mx-auto">&nbsp;</div>
+                    <p className="mt-2 text-sm font-semibold">Entregado por</p>
+                     <input
+                    type="text"
+                    placeholder="Nombre de quien entrega"
+                    className="w-3/4 mx-auto border-0 text-center text-sm focus:outline-none focus:ring-0 bg-transparent text-gray-500"
+                    value={entregadoPor}
+                    onChange={(e) => (e.target.value)} // Esto no necesita cambiar estado aquí, se lee del padre
+                    readOnly
+                    />
+                </div>
+                <div className="text-center">
+                    <div className="border-b border-gray-400 w-3/4 mx-auto">&nbsp;</div>
+                    <p className="mt-2 text-sm font-semibold">Recibido por</p>
+                     <input
+                    type="text"
+                    placeholder="Nombre de quien recibe"
+                    className="w-3/4 mx-auto border-0 text-center text-sm focus:outline-none focus:ring-0 bg-transparent text-gray-500"
+                    value={recibidoPor}
+                    onChange={(e) => (e.target.value)} // Esto no necesita cambiar estado aquí, se lee del padre
+                    readOnly
+                    />
+                </div>
                 </div>
             </main>
             
@@ -86,7 +100,7 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
             <PrintableContent ref={componentRef} loan={loan} entregadoPor={entregadoPor} recibidoPor={recibidoPor} />
         </div>
 
-        {/* Esto es lo que el usuario ve y edita. El formato es idéntico al original */}
+        {/* Esto es lo que el usuario ve y edita. El formato es idéntico al que ya funcionaba */}
         <div className="bg-white text-black p-8">
             <header className="flex justify-between items-center pb-4 border-b-4" style={{borderColor: '#C0A0A0'}}>
                 <div className="flex items-center justify-start w-1/3">
