@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -10,7 +9,8 @@ import { es } from 'date-fns/locale';
 import Image from 'next/image';
 import { useReactToPrint } from 'react-to-print';
 
-// 1. Create a new component for the content that will be printed
+// 1. Componente que contiene el contenido a imprimir.
+// Se usa React.forwardRef para que react-to-print pueda obtener la referencia del DOM.
 const PrintableContent = React.forwardRef<HTMLDivElement, { loan: Loan; entregadoPor: string; recibidoPor: string; }>((props, ref) => {
     const { loan, entregadoPor, recibidoPor } = props;
   
@@ -81,12 +81,12 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
 
   return (
     <div>
-        {/* The printable content is now separate and hidden from view */}
+        {/* El contenido imprimible ahora está separado y oculto a la vista */}
         <div style={{ display: "none" }}>
             <PrintableContent ref={componentRef} loan={loan} entregadoPor={entregadoPor} recibidoPor={recibidoPor} />
         </div>
 
-        {/* This is what the user sees. We'll replicate the form fields here. */}
+        {/* Esto es lo que el usuario ve y edita. El formato es idéntico al original */}
         <div className="bg-white text-black p-8">
             <header className="flex justify-between items-center pb-4 border-b-4" style={{borderColor: '#C0A0A0'}}>
                 <div className="flex items-center justify-start w-1/3">
@@ -123,7 +123,7 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
                     <div className="text-center">
                         <div className="border-b border-gray-400 w-3/4 mx-auto">&nbsp;</div>
                         <p className="mt-2 text-sm font-semibold">Entregado por</p>
-                        <input
+                         <input
                         type="text"
                         placeholder="Nombre de quien entrega"
                         className="w-3/4 mx-auto border-0 text-center text-sm focus:outline-none focus:ring-0 bg-transparent text-gray-500"
