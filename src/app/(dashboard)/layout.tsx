@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart2, Home, Package, Settings, ArrowRightLeft } from "lucide-react";
+import { Home, Package, Settings, ArrowRightLeft } from "lucide-react";
 import { FirebaseClientProvider } from "@/firebase/client-provider";
 
 import {
@@ -73,19 +73,6 @@ export default function DashboardLayout({
                           <span>Préstamos</span>
                       </Link>
                   </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={pathname.startsWith("/reports")}
-                  tooltip="Informes"
-                  disabled
-                >
-                  <Link href="#">
-                    <BarChart2 />
-                    <span>Informes</span>
-                  </Link>
-                </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarContent>
