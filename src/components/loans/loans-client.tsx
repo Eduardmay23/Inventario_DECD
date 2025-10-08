@@ -124,7 +124,7 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
   };
 
   return (
-    <>
+    <div>
       <div className="print-hide">
         <AppHeader title="Préstamos">
           <div className="flex items-center gap-2">
@@ -235,7 +235,7 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
         <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
             <AlertDialogContent>
             <AlertDialogHeader>
-                <AlertDialogTitle>¿Estás absolutamente seguro?</AlertDialogTitle>
+                <AlertDialogTitle>¿Estás absolutely seguro?</AlertDialogTitle>
                 <AlertDialogDescription>
                 Esta acción no se puede deshacer. Esto eliminará permanentemente el préstamo del producto "{loanToDelete?.productName}".
                 </AlertDialogDescription>
@@ -265,10 +265,9 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
             </DialogContent>
         </Dialog>
       </div>
-
       <div className="print-only">
         {loanToPrint && <LoanReceipt loan={loanToPrint} />}
       </div>
-    </>
+    </div>
   );
 }
