@@ -264,7 +264,7 @@ export default function InventoryClient({ data }: { data: Product[] }) {
             <DialogDescription>
               Modifica los detalles del producto. Haz clic en guardar cuando hayas terminado.
             </DialogDescription>
-          </Header>
+          </DialogHeader>
           <EditProductForm onSubmit={handleEditProduct} product={productToEdit} />
         </DialogContent>
       </Dialog>
