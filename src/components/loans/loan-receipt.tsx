@@ -10,23 +10,22 @@ import { cn } from '@/lib/utils';
 
 type LoanReceiptProps = {
   loan: Loan;
-  className?: string;
   entregadoPor: string;
   recibidoPor: string;
   setEntregadoPor: (value: string) => void;
   setRecibidoPor: (value: string) => void;
+  isPrinting?: boolean;
 };
 
 export function LoanReceipt({
   loan,
-  className,
   entregadoPor,
   recibidoPor,
   setEntregadoPor,
   setRecibidoPor,
 }: LoanReceiptProps) {
   return (
-    <div className={cn('font-sans text-foreground bg-white p-10', className)}>
+    <div className={cn('font-sans text-foreground bg-white p-10')}>
       <header className="grid grid-cols-3 items-center pb-4 border-b border-gray-400">
         <div className="flex justify-start">
           <Image
@@ -79,11 +78,10 @@ export function LoanReceipt({
           <div className="mt-1">
             <Input
               placeholder="Nombre de quien entrega"
-              className="print-hide border-gray-200 bg-gray-50 text-center focus-visible:ring-0"
+              className="border-0 border-b border-gray-300 rounded-none bg-transparent text-center shadow-none focus-visible:ring-0 px-1"
               value={entregadoPor}
               onChange={(e) => setEntregadoPor(e.target.value)}
             />
-            <p className="print-only text-sm text-center min-h-[20px]">{entregadoPor || ' '}</p>
           </div>
         </div>
         <div className="text-center">
@@ -92,11 +90,10 @@ export function LoanReceipt({
           <div className="mt-1">
             <Input
               placeholder="Nombre de quien recibe"
-              className="print-hide border-gray-200 bg-gray-50 text-center focus-visible:ring-0"
+              className="border-0 border-b border-gray-300 rounded-none bg-transparent text-center shadow-none focus-visible:ring-0 px-1"
               value={recibidoPor}
               onChange={(e) => setRecibidoPor(e.target.value)}
             />
-            <p className="print-only text-sm text-center min-h-[20px]">{recibidoPor || ' '}</p>
           </div>
         </div>
       </footer>

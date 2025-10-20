@@ -1,26 +1,37 @@
-.print-only {
-  display: none;
-}
-
 @media print {
+  /* Oculta todo por defecto */
   body * {
     visibility: hidden;
   }
-  
-  .print-hide {
-    display: none !important;
-  }
-  
-  .print-only, .print-only * {
+
+  /*
+    Hace visible solo el contenedor del recibo de préstamo y sus hijos.
+    Esto funciona porque el diálogo de ShadCN se renderiza en un portal.
+    Apuntamos directamente al contenido del diálogo.
+  */
+  .loan-receipt-printable-area, .loan-receipt-printable-area * {
     visibility: visible;
   }
 
-  .print-only {
+  /*
+    Asegura que el contenedor del recibo ocupe toda la página de impresión.
+    Lo posicionamos en la esquina superior izquierda de la página.
+  */
+  .loan-receipt-printable-area {
     position: absolute;
     left: 0;
     top: 0;
     width: 100%;
     height: 100%;
-    display: block !important;
+    margin: 0;
+    padding: 0;
+    border: none;
+    box-shadow: none;
+    background: white; /* Asegura fondo blanco */
+  }
+
+  /* Oculta el botón de cerrar en el diálogo al imprimir */
+  .loan-receipt-printable-area button[aria-label="Close"] {
+    display: none;
   }
 }
