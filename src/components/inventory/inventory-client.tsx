@@ -111,12 +111,12 @@ export default function InventoryClient({ data }: { data: Product[] }) {
     if (!lowercasedQuery) {
       return data;
     }
-    return data.filter(
-      (product) =>
-        product.name.toLowerCase().includes(lowercasedQuery) ||
-        product.sku.toLowerCase().includes(lowercasedQuery) ||
-        product.category.toLowerCase().includes(lowercasedQuery)
-    );
+    return data.filter((product) => {
+      const nameMatch = product.name?.toLowerCase().includes(lowercasedQuery) || false;
+      const skuMatch = product.sku?.toLowerCase().includes(lowercasedQuery) || false;
+      const categoryMatch = product.category?.toLowerCase().includes(lowercasedQuery) || false;
+      return nameMatch || skuMatch || categoryMatch;
+    });
   }, [data, searchQuery]);
 
 
