@@ -27,7 +27,7 @@ export default function AppHeader({
       {isMobile && <SidebarTrigger />}
       <h1 className="text-xl font-semibold md:text-2xl">{title}</h1>
       <div className="ml-auto flex items-center gap-4">
-        {!isMobile && search && (
+        {search && (
           <form className="relative ml-auto flex-1 md:grow-0">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input

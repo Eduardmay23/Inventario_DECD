@@ -132,10 +132,10 @@ export default function InventoryClient({ data }: { data: Product[] }) {
   };
 
   const filteredData = useMemo(() => {
-    if (!searchQuery) {
+    const lowercasedQuery = searchQuery.toLowerCase();
+    if (!lowercasedQuery) {
       return data;
     }
-    const lowercasedQuery = searchQuery.toLowerCase();
     return data.filter(
       (product) =>
         product.name.toLowerCase().includes(lowercasedQuery) ||
