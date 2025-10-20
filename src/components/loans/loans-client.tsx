@@ -249,7 +249,7 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
                 </AlertDialogAction>
             </AlertDialogFooter>
             </AlertDialogContent>
-        </AlertDialog>>
+        </AlertDialog>
 
         <Dialog open={isReceiptDialogOpen} onOpenChange={setIsReceiptDialogOpen} >
             <DialogContent className="w-full max-w-3xl loan-receipt-printable-area">

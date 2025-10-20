@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Icons } from "@/components/icons";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { cn } from "@/lib/utils";
 
 export default function DashboardLayout({
   children,
@@ -106,7 +107,7 @@ export default function DashboardLayout({
             </SidebarMenu>
           </SidebarFooter>
         </Sidebar>
-        <SidebarInset>
+        <SidebarInset className="print-hide">
           {children}
         </SidebarInset>
       </SidebarProvider>
