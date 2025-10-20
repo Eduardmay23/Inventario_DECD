@@ -195,7 +195,7 @@ export default function InventoryClient({ data }: { data: Product[] }) {
                             <TableCell className="hidden md:table-cell">{product.sku}</TableCell>
                             <TableCell className="hidden lg:table-cell">{product.category}</TableCell>
                             <TableCell className="text-right">{product.quantity}</TableCell>
-                            <TableCell className="hidden md:table-cell">{product.location}</TableCell>
+                            <TableCell className="hidden md-table-cell">{product.location}</TableCell>
                             <TableCell>
                                 <Badge
                                 variant={
@@ -277,7 +277,7 @@ export default function InventoryClient({ data }: { data: Product[] }) {
             <AlertDialogDescription>
               Esta acción no se puede deshacer. Esto eliminará permanentemente el
               producto "{productToDelete?.name}" de tus datos de inventario.
-            </AlertDialogDescription>
+            </dialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
