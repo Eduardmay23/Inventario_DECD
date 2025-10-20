@@ -67,7 +67,7 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
   const { toast } = useToast();
   const { firestore } = useFirebase();
 
-  const handleAddLoan = async (loanData: Omit<Loan, 'id' | 'status' | 'productName'>) => {
+  const handleAddLoan = async (loanData: Omit<Loan, 'id' | 'status' | 'productName'>, productName: string) => {
     if (!firestore) return;
 
     const product = products.find(p => p.id === loanData.productId);
@@ -101,14 +101,14 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
 
             transaction.set(newLoanRef, {
                 ...loanData,
-                productName: product.name,
+                productName: productName,
                 status: 'Prestado',
             });
         });
 
         toast({
             title: "Éxito",
-            description: `El préstamo para "${product.name}" ha sido registrado.`,
+            description: `El préstamo para "${productName}" ha sido registrado.`,
         });
         setIsAddDialogOpen(false);
 

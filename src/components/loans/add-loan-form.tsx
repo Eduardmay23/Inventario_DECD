@@ -46,7 +46,7 @@ const formSchema = z.object({
 });
 
 type AddLoanFormProps = {
-  onSubmit: (data: Omit<Loan, 'id' | 'status' | 'productName'>) => void;
+  onSubmit: (data: Omit<Loan, 'id' | 'status' | 'productName'>, productName: string) => void;
   products: Product[];
 };
 
@@ -61,13 +61,16 @@ export function AddLoanForm({ onSubmit, products }: AddLoanFormProps) {
 
   function handleFormSubmit(values: z.infer<typeof formSchema>) {
     const product = products.find(p => p.id === values.productId);
-    if (!product) return;
+    if (!product) {
+        console.error("No se encontró el producto con el ID:", values.productId);
+        return;
+    };
 
     onSubmit({
         productId: values.productId,
         requester: values.requester,
         loanDate: values.loanDate.toISOString(),
-    });
+    }, product.name);
     form.reset();
   }
 
