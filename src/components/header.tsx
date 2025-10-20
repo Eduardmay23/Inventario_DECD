@@ -5,6 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Bell, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
+type SearchProps = {
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  placeholder: string;
+};
+
 export default function AppHeader({
   title,
   children,
@@ -12,11 +18,7 @@ export default function AppHeader({
 }: {
   title: string;
   children?: React.ReactNode;
-  search?: {
-    value: string;
-    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    placeholder: string;
-  };
+  search?: SearchProps;
 }) {
   const { isMobile } = useSidebar();
 
