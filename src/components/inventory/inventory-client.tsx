@@ -113,9 +113,9 @@ export default function InventoryClient({ data }: { data: Product[] }) {
       return data;
     }
     return data.filter((product) => {
-      const nameMatch = product.name?.toLowerCase().includes(lowercasedQuery) || false;
-      const skuMatch = product.sku?.toLowerCase().includes(lowercasedQuery) || false;
-      const categoryMatch = product.category?.toLowerCase().includes(lowercasedQuery) || false;
+      const nameMatch = product.name?.toLowerCase().includes(lowercasedQuery) ?? false;
+      const skuMatch = product.sku?.toLowerCase().includes(lowercasedQuery) ?? false;
+      const categoryMatch = product.category?.toLowerCase().includes(lowercasedQuery) ?? false;
       return nameMatch || skuMatch || categoryMatch;
     });
   }, [data, searchQuery]);
@@ -149,23 +149,23 @@ export default function InventoryClient({ data }: { data: Product[] }) {
 
   return (
     <>
-      <AppHeader 
+      <AppHeader
         title="Inventario"
         search={{
           value: searchQuery,
           onChange: (e) => setSearchQuery(e.target.value),
-          placeholder: "Buscar por nombre, SKU, categoría..."
+          placeholder: "Buscar por nombre, SKU, categoría...",
         }}
       >
         <div className="flex items-center gap-2">
-            <Button size="sm" variant="outline" onClick={handleDownloadCsv}>
-                <Download className="h-4 w-4 mr-2" />
-                Descargar CSV
-            </Button>
-            <Button size="sm" onClick={() => setIsAddDialogOpen(true)}>
-                <PlusCircle className="h-4 w-4 mr-2" />
-                Añadir Producto
-            </Button>
+          <Button size="sm" variant="outline" onClick={handleDownloadCsv}>
+            <Download className="h-4 w-4 mr-2" />
+            Descargar CSV
+          </Button>
+          <Button size="sm" onClick={() => setIsAddDialogOpen(true)}>
+            <PlusCircle className="h-4 w-4 mr-2" />
+            Añadir Producto
+          </Button>
         </div>
       </AppHeader>
       <main className="flex-1 p-4 md:p-6">
