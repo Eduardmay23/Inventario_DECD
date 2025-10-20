@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -62,7 +63,7 @@ export function AddLoanForm({ onSubmit, products }: AddLoanFormProps) {
   function handleFormSubmit(values: z.infer<typeof formSchema>) {
     const product = products.find(p => p.id === values.productId);
     if (!product) {
-        console.error("No se encontró el producto con el ID:", values.productId);
+        console.error("Error: No se pudo encontrar el producto seleccionado.");
         // Aquí podrías usar un toast para notificar al usuario.
         return;
     }
