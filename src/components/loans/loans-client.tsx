@@ -69,49 +69,49 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
 
   const handleAddLoan = async (loanData: Omit<Loan, 'id' | 'status' | 'productName'>, productName: string) => {
     if (!firestore) return;
-
+  
     const product = products.find(p => p.id === loanData.productId);
     if (!product) {
       toast({ variant: "destructive", title: "Error", description: "Producto no encontrado." });
       return;
     }
-
-    if (product.quantity <= 0) {
-        toast({ variant: "destructive", title: "Error", description: "No hay stock disponible para este producto." });
+  
+    if (product.quantity < loanData.quantity) {
+        toast({ variant: "destructive", title: "Error", description: "No hay stock suficiente para este préstamo." });
         return;
     }
-
+  
     const newLoanRef = doc(collection(firestore, "loans"));
     const productRef = doc(firestore, "products", loanData.productId);
-
+  
     try {
         await runTransaction(firestore, async (transaction) => {
             const productDoc = await transaction.get(productRef);
             if (!productDoc.exists()) {
                 throw "¡El producto ya no existe!";
             }
-
+  
             const currentQuantity = productDoc.data().quantity;
-            if (currentQuantity < 1) {
-                throw "¡No hay suficiente stock para este préstamo!";
+            if (currentQuantity < loanData.quantity) {
+                throw `¡No hay suficiente stock! Solo quedan ${currentQuantity} unidades.`;
             }
-
-            const newQuantity = currentQuantity - 1;
+  
+            const newQuantity = currentQuantity - loanData.quantity;
             transaction.update(productRef, { quantity: newQuantity });
-
+  
             transaction.set(newLoanRef, {
                 ...loanData,
                 productName: productName,
                 status: 'Prestado',
             });
         });
-
+  
         toast({
             title: "Éxito",
             description: `El préstamo para "${productName}" ha sido registrado.`,
         });
         setIsAddDialogOpen(false);
-
+  
     } catch (e) {
         console.error("Error en la transacción de préstamo: ", e);
         toast({
@@ -137,7 +137,7 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
           throw "El producto original ya no existe en el inventario, pero el préstamo fue actualizado.";
         }
 
-        const newQuantity = productDoc.data().quantity + 1;
+        const newQuantity = productDoc.data().quantity + loan.quantity;
         transaction.update(productRef, { quantity: newQuantity });
         transaction.update(loanRef, { status: 'Devuelto' });
       });
@@ -213,6 +213,7 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
                               <TableHead>Producto</TableHead>
                               <TableHead>Solicitante</TableHead>
                               <TableHead>Fecha de Préstamo</TableHead>
+                              <TableHead className="text-right">Cantidad</TableHead>
                               <TableHead>Estado</TableHead>
                               <TableHead>
                               <span className="sr-only">Acciones</span>
@@ -228,6 +229,7 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
                                 <TableCell>
                                     {format(new Date(loan.loanDate), "d 'de' MMMM, yyyy", { locale: es })}
                                 </TableCell>
+                                <TableCell className="text-right">{loan.quantity}</TableCell>
                                 <TableCell>
                                     <Badge
                                     variant={
@@ -273,7 +275,7 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
                               ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={5} className="h-24 text-center">
+                                    <TableCell colSpan={6} className="h-24 text-center">
                                     No hay préstamos registrados.
                                     </TableCell>
                                 </TableRow>

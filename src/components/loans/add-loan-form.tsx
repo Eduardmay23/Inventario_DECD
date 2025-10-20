@@ -44,6 +44,9 @@ const formSchema = z.object({
   loanDate: z.date({
     required_error: "Se requiere una fecha de préstamo.",
   }),
+  quantity: z.coerce.number().int().min(1, {
+    message: "La cantidad debe ser al menos 1.",
+  }),
 });
 
 type AddLoanFormProps = {
@@ -57,22 +60,31 @@ export function AddLoanForm({ onSubmit, products }: AddLoanFormProps) {
     defaultValues: {
       requester: "",
       loanDate: new Date(),
+      quantity: 1,
     },
   });
 
+  const selectedProductId = form.watch("productId");
+  const selectedProduct = products.find(p => p.id === selectedProductId);
+
   function handleFormSubmit(values: z.infer<typeof formSchema>) {
-    const product = products.find(p => p.id === values.productId);
-    if (!product) {
+    if (!selectedProduct) {
         console.error("Error: No se pudo encontrar el producto seleccionado.");
-        // Aquí podrías usar un toast para notificar al usuario.
+        form.setError("productId", { type: "manual", message: "Producto no válido." });
         return;
+    }
+
+    if (values.quantity > selectedProduct.quantity) {
+      form.setError("quantity", { type: "manual", message: `No puedes prestar más de ${selectedProduct.quantity} unidades.` });
+      return;
     }
 
     onSubmit({
         productId: values.productId,
         requester: values.requester,
         loanDate: values.loanDate.toISOString(),
-    }, product.name);
+        quantity: values.quantity,
+    }, selectedProduct.name);
     form.reset();
   }
 
@@ -99,6 +111,19 @@ export function AddLoanForm({ onSubmit, products }: AddLoanFormProps) {
                   ))}
                 </SelectContent>
               </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="quantity"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Cantidad a prestar</FormLabel>
+              <FormControl>
+                <Input type="number" min="1" max={selectedProduct?.quantity} {...field} />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}

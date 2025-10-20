@@ -22,5 +22,6 @@ export type Loan = {
   productName: string;
   requester: string;
   loanDate: string;
+  quantity: number;
   status: 'Prestado' | 'Devuelto';
 };

@@ -59,16 +59,24 @@
           "description": "The date the loan was made.",
           "format": "date-time"
         },
+        "quantity": {
+          "type": "number",
+          "description": "The number of items loaned."
+        },
         "status": {
           "type": "string",
           "description": "The status of the loan.",
-          "enum": ["Prestado", "Devuelto"]
+          "enum": [
+            "Prestado",
+            "Devuelto"
+          ]
         }
       },
       "required": [
         "productName",
         "requester",
         "loanDate",
+        "quantity",
         "status"
       ]
     }
