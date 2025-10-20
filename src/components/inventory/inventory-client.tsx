@@ -292,3 +292,5 @@ export default function InventoryClient({ data }: { data: Product[] }) {
     </>
   );
 }
+
+    
