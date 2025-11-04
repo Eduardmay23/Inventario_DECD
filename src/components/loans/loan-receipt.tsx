@@ -14,7 +14,6 @@ type LoanReceiptProps = {
   recibidoPor: string;
   setEntregadoPor: (value: string) => void;
   setRecibidoPor: (value: string) => void;
-  isPrinting?: boolean;
 };
 
 export function LoanReceipt({

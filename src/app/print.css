@@ -30,8 +30,23 @@
     background: white; /* Asegura fondo blanco */
   }
 
+  /* Oculta los elementos que no queremos imprimir dentro del diálogo */
+  .loan-receipt-printable-area .print-hide-in-dialog {
+    display: none;
+  }
+
   /* Oculta el botón de cerrar en el diálogo al imprimir */
   .loan-receipt-printable-area button[aria-label="Close"] {
+    display: none;
+  }
+}
+
+.print-hide {
+  display: revert;
+}
+
+@media print {
+  .print-hide {
     display: none;
   }
 }

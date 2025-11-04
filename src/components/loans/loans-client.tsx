@@ -103,6 +103,7 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
                 ...loanData,
                 productName: productName,
                 status: 'Prestado',
+                quantity: loanData.quantity,
             });
         });
   
@@ -132,7 +133,7 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
       await runTransaction(firestore, async (transaction) => {
         const productDoc = await transaction.get(productRef);
         if (!productDoc.exists()) {
-          // Si el producto fue eliminado, al menos actualizamos el estado del préstamo
+          // If the product was deleted, at least we update the loan status
           transaction.update(loanRef, { status: 'Devuelto' });
           throw "El producto original ya no existe en el inventario, pero el préstamo fue actualizado.";
         }
