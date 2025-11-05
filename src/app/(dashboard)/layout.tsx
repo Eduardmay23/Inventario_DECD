@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Package, Settings, ArrowRightLeft } from "lucide-react";
+import { Home, Package, Settings, ArrowRightLeft, Check } from "lucide-react";
 import { FirebaseClientProvider } from "@/firebase/client-provider";
+import React from 'react';
 
 import {
   SidebarProvider,
@@ -16,9 +17,30 @@ import {
   SidebarFooter,
   SidebarInset,
 } from "@/components/ui/sidebar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Icons } from "@/components/icons";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
+
+type User = {
+  id: number;
+  name: string;
+  role: string;
+  avatar: string;
+  initials: string;
+};
+
+const users: User[] = [
+    { id: 1, name: 'Admin User', role: 'Administrador', avatar: 'https://picsum.photos/seed/avatar1/40/40', initials: 'AU' },
+    { id: 2, name: 'Maria Garcia', role: 'Usuario', avatar: 'https://picsum.photos/seed/avatar2/40/40', initials: 'MG' },
+];
 
 export default function DashboardLayout({
   children,
@@ -26,6 +48,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const [currentUser, setCurrentUser] = React.useState<User>(users[0]);
 
   return (
     <FirebaseClientProvider>
@@ -93,16 +116,34 @@ export default function DashboardLayout({
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <div className="flex items-center gap-3 px-2 py-1">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src="https://picsum.photos/seed/avatar/40/40" alt="Usuario" data-ai-hint="person avatar" />
-                    <AvatarFallback>AU</AvatarFallback>
-                  </Avatar>
-                  <div className="flex flex-col truncate">
-                    <span className="text-sm font-semibold">Usuario Admin</span>
-                    <span className="text-xs text-muted-foreground">admin@stockwise.com</span>
-                  </div>
-                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <div className="flex items-center gap-3 px-2 py-1 rounded-md hover:bg-sidebar-accent cursor-pointer">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={currentUser.avatar} alt={currentUser.name} data-ai-hint="person avatar" />
+                        <AvatarFallback>{currentUser.initials}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col truncate">
+                        <span className="text-sm font-semibold">{currentUser.name}</span>
+                        <span className="text-xs text-muted-foreground">{currentUser.role}</span>
+                      </div>
+                    </div>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56 mb-2" side="top" align="start">
+                    <DropdownMenuLabel>Cambiar de Usuario</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {users.map((user) => (
+                         <DropdownMenuItem key={user.id} onSelect={() => setCurrentUser(user)}>
+                             <Avatar className="h-6 w-6 mr-2">
+                                 <AvatarImage src={user.avatar} alt={user.name} data-ai-hint="person avatar" />
+                                 <AvatarFallback>{user.initials}</AvatarFallback>
+                             </Avatar>
+                             <span>{user.name}</span>
+                             {currentUser.id === user.id && <Check className="ml-auto h-4 w-4" />}
+                         </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarFooter>
