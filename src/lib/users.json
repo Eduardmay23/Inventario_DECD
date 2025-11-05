@@ -1,0 +1,21 @@
+
+{
+  "users": [
+    {
+      "id": "1",
+      "username": "admin",
+      "password": "password123",
+      "name": "Administrador",
+      "role": "admin",
+      "permissions": ["dashboard", "inventory", "loans", "settings"]
+    },
+    {
+      "id": "2",
+      "username": "user",
+      "password": "password123",
+      "name": "Usuario Básico",
+      "role": "user",
+      "permissions": ["inventory"]
+    }
+  ]
+}

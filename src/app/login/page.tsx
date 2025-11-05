@@ -15,6 +15,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import usersData from '@/lib/users.json';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -26,10 +27,15 @@ export default function LoginPage() {
     const username = formData.get('username') as string;
     const password = formData.get('password') as string;
 
-    if (username.toLowerCase() === 'admin' && password === 'password123') {
+    const user = usersData.users.find(
+      u => u.username.toLowerCase() === username.toLowerCase() && u.password === password
+    );
+
+    if (user) {
       setError(null);
-      // Simulate successful login by setting a session flag
-      sessionStorage.setItem('authenticated', 'true');
+      // Simulate successful login by setting a session flag with user data
+      const { password: _, ...sessionData } = user;
+      sessionStorage.setItem('user-session', JSON.stringify(sessionData));
       router.replace('/inventory');
     } else {
       setError('Usuario o contraseña incorrectos. Inténtalo de nuevo.');
@@ -89,7 +95,7 @@ export default function LoginPage() {
           </CardContent>
         </Card>
         <p className="px-8 text-center text-sm text-muted-foreground">
-          Usuario: <span className="font-mono">admin</span>, Contraseña: <span className="font-mono">password123</span>
+          Usuario por defecto: <span className="font-mono">admin</span>, Contraseña: <span className="font-mono">password123</span>
         </p>
       </div>
     </main>
