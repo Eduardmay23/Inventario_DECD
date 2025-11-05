@@ -27,7 +27,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { useFirebase } from '@/firebase';
+import { auth } from '@/firebase';
 import { Icons } from '@/components/icons';
 
 const formSchema = z.object({
@@ -37,7 +37,6 @@ const formSchema = z.object({
 
 export default function LoginPage() {
   const router = useRouter();
-  const { auth } = useFirebase();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 

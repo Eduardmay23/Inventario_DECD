@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { useFirebase } from '@/firebase';
+import { auth } from '@/firebase';
 import { Icons } from '@/components/icons';
 import { Loader2 } from 'lucide-react';
 
@@ -36,7 +36,6 @@ const formSchema = z.object({
 export default function ForgotPasswordPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
-  const { auth } = useFirebase();
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({

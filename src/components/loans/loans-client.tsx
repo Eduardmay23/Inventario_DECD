@@ -48,7 +48,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AddLoanForm } from "./add-loan-form";
-import { deleteDocumentNonBlocking, useFirebase } from "@/firebase";
+import { deleteDocumentNonBlocking, firestore } from "@/firebase";
 import { LoanReceipt } from "./loan-receipt";
 
 type LoansClientProps = {
@@ -65,10 +65,8 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
   const [entregadoPor, setEntregadoPor] = useState('');
   const [recibidoPor, setRecibidoPor] = useState('');
   const { toast } = useToast();
-  const { firestore } = useFirebase();
 
   const handleAddLoan = async (loanData: Omit<Loan, 'id' | 'status' | 'productName'>, productName: string) => {
-    if (!firestore) return;
   
     const product = products.find(p => p.id === loanData.productId);
     if (!product) {
@@ -124,7 +122,6 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
   };
   
   const handleMarkAsReturned = async (loan: Loan) => {
-    if (!firestore) return;
 
     const loanRef = doc(firestore, 'loans', loan.id);
     const productRef = doc(firestore, 'products', loan.productId);
@@ -171,7 +168,7 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
   };
 
   const confirmDelete = () => {
-    if (loanToDelete && firestore) {
+    if (loanToDelete) {
       const loanRef = doc(firestore, "loans", loanToDelete.id);
       deleteDocumentNonBlocking(loanRef);
       toast({

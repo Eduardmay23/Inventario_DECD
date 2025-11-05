@@ -46,7 +46,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AddProductForm } from "./add-product-form";
 import { EditProductForm } from "./edit-product-form";
-import { addDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking, useFirebase } from "@/firebase";
+import { addDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking, firestore } from "@/firebase";
 
 export default function InventoryClient({ data }: { data: Product[] }) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -56,7 +56,6 @@ export default function InventoryClient({ data }: { data: Product[] }) {
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const [productToEdit, setProductToEdit] = useState<Product | null>(null);
   const { toast } = useToast();
-  const { firestore } = useFirebase();
 
   const handleEditClick = (product: Product) => {
     setProductToEdit(product);
@@ -69,7 +68,7 @@ export default function InventoryClient({ data }: { data: Product[] }) {
   };
 
   const confirmDelete = () => {
-    if (productToDelete && firestore) {
+    if (productToDelete) {
       const productRef = doc(firestore, "products", productToDelete.id);
       deleteDocumentNonBlocking(productRef);
       toast({
@@ -82,19 +81,17 @@ export default function InventoryClient({ data }: { data: Product[] }) {
   };
   
   const handleAddProduct = (newProductData: Omit<Product, 'id'>) => {
-    if (firestore) {
-      const productsCollection = collection(firestore, "products");
-      addDocumentNonBlocking(productsCollection, newProductData);
-      toast({
-        title: "Éxito",
-        description: `El producto "${newProductData.name}" ha sido añadido.`,
-      });
-      setIsAddDialogOpen(false);
-    }
+    const productsCollection = collection(firestore, "products");
+    addDocumentNonBlocking(productsCollection, newProductData);
+    toast({
+      title: "Éxito",
+      description: `El producto "${newProductData.name}" ha sido añadido.`,
+    });
+    setIsAddDialogOpen(false);
   };
 
   const handleEditProduct = (editedProductData: Omit<Product, 'id'>) => {
-    if (firestore && productToEdit) {
+    if (productToEdit) {
       const productRef = doc(firestore, "products", productToEdit.id);
       setDocumentNonBlocking(productRef, editedProductData, { merge: true });
       toast({

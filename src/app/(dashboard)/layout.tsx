@@ -4,9 +4,9 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Home, Package, Settings, ArrowRightLeft, LogOut, Loader2 } from "lucide-react";
-import { FirebaseClientProvider } from "@/firebase/client-provider";
 import React, { useEffect, useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
+import { onAuthStateChanged, User } from "firebase/auth";
 
 import {
   SidebarProvider,
@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Icons } from "@/components/icons";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useFirebase } from "@/firebase";
+import { auth, firestore } from "@/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -49,72 +49,65 @@ const UserSkeleton = () => (
   </div>
 );
 
-function DashboardContent({ children }: { children: React.ReactNode }) {
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { auth, firestore, isUserLoading, user } = useFirebase();
+  const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [profileLoading, setProfileLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   
   useEffect(() => {
-    if (isUserLoading) {
-      setProfileLoading(true);
-      return;
-    }
-
-    if (!user) {
-      setProfileLoading(false);
-      router.replace('/login');
-      return;
-    }
-
-    const fetchUserProfile = async () => {
-      if (!firestore) return;
-      const userDocRef = doc(firestore, "users", user.uid);
-      try {
-        const userDocSnap = await getDoc(userDocRef);
-        if (userDocSnap.exists()) {
-          const profile = userDocSnap.data() as UserProfile;
-          if (profile.role) {
-            setUserProfile(profile);
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        setUser(firebaseUser);
+        const userDocRef = doc(firestore, "users", firebaseUser.uid);
+        try {
+          const userDocSnap = await getDoc(userDocRef);
+          if (userDocSnap.exists()) {
+            const profile = userDocSnap.data() as UserProfile;
+            if (profile.role) {
+              setUserProfile(profile);
+            } else {
+              toast({
+                  variant: "destructive",
+                  title: "Error de Permisos",
+                  description: "Tu perfil no tiene un rol. Contacta al administrador.",
+              });
+              await auth.signOut();
+            }
           } else {
-             console.error("User profile is missing role! Signing out.");
-             toast({
-                variant: "destructive",
-                title: "Error de Permisos",
-                description: "Tu perfil de usuario no tiene un rol asignado. Contacta al administrador.",
-             });
-             await auth.signOut();
+            toast({
+               variant: "destructive",
+               title: "Perfil no encontrado",
+               description: "No se encontró tu perfil. Sesión cerrada.",
+            });
+            await auth.signOut();
           }
-        } else {
-          console.error("No user profile found in Firestore! Signing out.");
+        } catch (error) {
+          console.error("Error fetching user profile:", error);
           toast({
-             variant: "destructive",
-             title: "Perfil no encontrado",
-             description: "No se pudo encontrar tu perfil de usuario en la base de datos. Sesión cerrada.",
+              variant: "destructive",
+              title: "Error de Red",
+              description: "No se pudo cargar tu perfil.",
           });
           await auth.signOut();
+        } finally {
+          setIsLoading(false);
         }
-      } catch (error) {
-        console.error("Error fetching user profile:", error);
-        toast({
-            variant: "destructive",
-            title: "Error de Red",
-            description: "No se pudo cargar tu perfil. Comprueba tu conexión.",
-        });
-        await auth.signOut();
-      } finally {
-        setProfileLoading(false);
+      } else {
+        setUser(null);
+        setUserProfile(null);
+        setIsLoading(false);
+        router.replace('/login');
       }
-    };
+    });
 
-    fetchUserProfile();
+    return () => unsubscribe();
+  }, [router, toast]);
 
-  }, [user, isUserLoading, firestore, auth, router, toast]);
 
   const handleLogout = () => {
-    if (!auth) return;
     auth.signOut().then(() => {
       setUserProfile(null);
       router.push('/login');
@@ -130,7 +123,6 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     return name.substring(0, 2).toUpperCase();
   }
 
-  const isLoading = isUserLoading || profileLoading;
   const isAdmin = userProfile?.role === 'admin';
 
   return (
@@ -240,18 +232,5 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         ) : children}
       </SidebarInset>
     </SidebarProvider>
-  );
-}
-
-
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return (
-    <FirebaseClientProvider>
-      <DashboardContent>{children}</DashboardContent>
-    </FirebaseClientProvider>
   );
 }
