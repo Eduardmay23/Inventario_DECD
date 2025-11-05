@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -78,7 +79,6 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
           if (profile.role) {
             setUserProfile(profile);
           } else {
-             // This case is unlikely but handles if role is missing
              console.error("User profile is missing role! Signing out.");
              toast({
                 variant: "destructive",
@@ -88,7 +88,6 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
              await auth.signOut();
           }
         } else {
-          // Profile doesn't exist in Firestore. This is a critical error state.
           console.error("No user profile found in Firestore! Signing out.");
           toast({
              variant: "destructive",
@@ -110,15 +109,13 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
       }
     };
 
-    // Fetch profile only if we have a user but no profile loaded yet.
     if (user && !userProfile) {
       fetchUserProfile();
     } else if (!user) {
-      // If there's no user, stop loading and the main redirect will handle it.
       setProfileLoading(false);
     }
 
-  }, [user, isUserLoading, firestore, auth, router, toast, userProfile]);
+  }, [user, isUserLoading, firestore, auth, router, toast]);
 
   const handleLogout = () => {
     if (!auth) return;
@@ -151,7 +148,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         </SidebarHeader>
         <SidebarContent>
           <SidebarMenu>
-            {!isLoading && isAdmin && (
+            {isAdmin && (
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
@@ -165,21 +162,19 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                 </SidebarMenuButton>
               </SidebarMenuItem>
             )}
-            {!isLoading && (
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={pathname.startsWith("/inventory")}
-                  tooltip="Inventario"
-                >
-                  <Link href="/inventory">
-                    <Package />
-                    <span>Inventario</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            )}
-            {!isLoading && isAdmin && (
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                asChild
+                isActive={pathname.startsWith("/inventory")}
+                tooltip="Inventario"
+              >
+                <Link href="/inventory">
+                  <Package />
+                  <span>Inventario</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            {isAdmin && (
               <SidebarMenuItem>
                   <SidebarMenuButton
                       asChild
@@ -197,7 +192,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         </SidebarContent>
         <SidebarFooter>
           <SidebarMenu>
-             {!isLoading && isAdmin && (
+             {isAdmin && (
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
