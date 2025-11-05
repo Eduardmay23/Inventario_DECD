@@ -8,7 +8,6 @@ import type { User } from '@/lib/types';
 
 // Define el esquema para un nuevo usuario
 const userSchema = z.object({
-  id: z.string().optional(), // ID is not needed for creation, but good to have in the full schema
   name: z.string().min(2, "El nombre debe tener al menos 2 caracteres."),
   username: z.string().min(3, "El nombre de usuario debe tener al menos 3 caracteres."),
   password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres."),
