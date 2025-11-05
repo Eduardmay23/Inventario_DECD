@@ -6,7 +6,7 @@ import path from 'path';
 import { z } from 'zod';
 import type { User } from '@/lib/types';
 
-// Define el esquema para un nuevo usuario
+// Define el esquema para un nuevo usuario, incluyendo el rol
 const userSchema = z.object({
   name: z.string().min(2, "El nombre debe tener al menos 2 caracteres."),
   username: z.string().min(3, "El nombre de usuario debe tener al menos 3 caracteres."),
