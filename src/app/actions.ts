@@ -12,9 +12,7 @@ const userSchema = z.object({
   username: z.string().min(3, "El nombre de usuario debe tener al menos 3 caracteres."),
   password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres."),
   role: z.enum(['admin', 'user']),
-  permissions: z.array(z.string()).refine(value => value.some(item => item), {
-    message: "Debes seleccionar al menos un permiso.",
-  }),
+  permissions: z.array(z.string()).min(1, { message: "Debes seleccionar al menos un permiso." }),
 });
 
 const usersFilePath = path.join(process.cwd(), 'src', 'lib', 'users.json');
@@ -45,7 +43,7 @@ export async function saveUser(newUser: Omit<User, 'id'>): Promise<{ success: bo
   try {
     const data = await readUsers();
     
-    const userExists = data.users.some(user => user.username === result.data.username);
+    const userExists = data.users.some(user => user.username.toLowerCase() === result.data.username.toLowerCase());
     if (userExists) {
         return { success: false, error: 'El nombre de usuario ya existe.' };
     }
