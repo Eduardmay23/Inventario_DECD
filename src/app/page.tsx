@@ -9,7 +9,12 @@ export default function HomePage() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace('/login');
+    const session = sessionStorage.getItem('user-session');
+    if (session) {
+      router.replace('/dashboard');
+    } else {
+      router.replace('/login');
+    }
   }, [router]);
 
   return (
