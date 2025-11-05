@@ -55,18 +55,19 @@ export default function SettingsPage() {
   const { toast } = useToast();
 
   useEffect(() => {
+    // This syncs the initial state from the imported JSON.
+    // The router.refresh() will handle updates after actions.
     setUsers(usersData.users);
   }, []);
 
   const handleAddUser = (newUser: Omit<User, 'id'>) => {
     startTransition(async () => {
-      const userWithId = { ...newUser, id: (Math.random() * 10000).toString(36) };
-      const result = await saveUser(userWithId);
+      const result = await saveUser(newUser);
 
       if (result.success) {
         toast({
           title: "Usuario Creado",
-          description: `El usuario "${userWithId.username}" ha sido guardado.`,
+          description: `El usuario "${newUser.username}" ha sido guardado.`,
         });
         setIsAddUserOpen(false);
         router.refresh(); 
