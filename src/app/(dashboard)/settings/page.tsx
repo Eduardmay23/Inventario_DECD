@@ -47,6 +47,7 @@ import { useRouter } from 'next/navigation';
 
 export default function SettingsPage() {
   const router = useRouter();
+  // We manage a local state for users that gets refreshed
   const [users, setUsers] = useState<User[]>(usersData.users);
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
@@ -54,11 +55,12 @@ export default function SettingsPage() {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
+  // Sync local state with the JSON file on mount.
+  // router.refresh() will handle subsequent updates.
   useEffect(() => {
-    // This syncs the initial state from the imported JSON.
-    // The router.refresh() will handle updates after actions.
     setUsers(usersData.users);
   }, []);
+
 
   const handleAddUser = (newUser: Omit<User, 'id'>) => {
     startTransition(async () => {
@@ -70,7 +72,7 @@ export default function SettingsPage() {
           description: `El usuario "${newUser.username}" ha sido guardado.`,
         });
         setIsAddUserOpen(false);
-        router.refresh(); 
+        router.refresh(); // This is the magic! Reload server data.
       } else {
         toast({
           variant: "destructive",
@@ -103,7 +105,7 @@ export default function SettingsPage() {
             title: "Usuario Eliminado",
             description: `El usuario "${userToDelete!.username}" ha sido eliminado.`,
           });
-          router.refresh();
+          router.refresh(); // Reload server data
         } else {
           toast({
             variant: "destructive",

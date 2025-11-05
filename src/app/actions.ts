@@ -8,7 +8,7 @@ import type { User } from '@/lib/types';
 
 // Define el esquema para un nuevo usuario
 const userSchema = z.object({
-  id: z.string(),
+  id: z.string().optional(), // ID is not needed for creation, but good to have in the full schema
   name: z.string().min(2, "El nombre debe tener al menos 2 caracteres."),
   username: z.string().min(3, "El nombre de usuario debe tener al menos 3 caracteres."),
   password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres."),
@@ -35,8 +35,8 @@ async function writeUsers(data: { users: User[] }): Promise<void> {
   await fs.writeFile(usersFilePath, JSON.stringify(data, null, 2), 'utf-8');
 }
 
-export async function saveUser(newUser: Omit<User, 'id' | 'role'> & { id?: string; role?: 'user' | 'admin' }): Promise<{ success: boolean, error?: string, data?: User }> {
-  const result = userSchema.safeParse({ ...newUser, id: newUser.id || 'temp', role: newUser.role || 'user' });
+export async function saveUser(newUser: Omit<User, 'id'>): Promise<{ success: boolean, error?: string, data?: User }> {
+  const result = userSchema.safeParse(newUser);
 
   if (!result.success) {
     const firstError = Object.values(result.error.flatten().fieldErrors)[0]?.[0];

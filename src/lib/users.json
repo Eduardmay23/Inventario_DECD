@@ -1,4 +1,3 @@
-
 {
   "users": [
     {
@@ -7,15 +6,22 @@
       "password": "password123",
       "name": "Administrador",
       "role": "admin",
-      "permissions": ["dashboard", "inventory", "loans", "settings"]
+      "permissions": [
+        "dashboard",
+        "inventory",
+        "loans",
+        "settings"
+      ]
     },
     {
-      "id": "2",
-      "username": "user",
-      "password": "password123",
-      "name": "Usuario Básico",
+      "id": "mhmbpbaw.o48",
+      "name": "Pedro AVS",
+      "username": "Pedro",
+      "password": "123456",
       "role": "user",
-      "permissions": ["inventory"]
+      "permissions": [
+        "loans"
+      ]
     }
   ]
 }
