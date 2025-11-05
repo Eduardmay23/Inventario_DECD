@@ -1,3 +1,5 @@
+'use server';
+
 import * as admin from 'firebase-admin';
 import 'server-only';
 
@@ -12,7 +14,7 @@ let app: admin.app.App;
  * @returns An object containing the admin Firestore and Auth instances.
  */
 export function getFirebaseAdmin() {
-  if (!app) {
+  if (admin.apps.length === 0) {
     if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
         const serviceAccount = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
         app = admin.initializeApp({
@@ -23,6 +25,8 @@ export function getFirebaseAdmin() {
         // This will use Application Default Credentials if available.
         app = admin.initializeApp();
     }
+  } else {
+    app = admin.app();
   }
 
   return {
