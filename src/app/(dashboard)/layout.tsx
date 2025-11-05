@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Home, Package, Settings, ArrowRightLeft, LogOut, Loader2 } from "lucide-react";
 import { FirebaseClientProvider } from "@/firebase/client-provider";
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 
 import {
@@ -53,8 +53,8 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { auth, firestore, isUserLoading, user } = useFirebase();
-  const [userProfile, setUserProfile] = React.useState<UserProfile | null>(null);
-  const [profileLoading, setProfileLoading] = React.useState(true);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [profileLoading, setProfileLoading] = useState(true);
   const { toast } = useToast();
   
   useEffect(() => {
@@ -62,18 +62,18 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
       setProfileLoading(true);
       return;
     }
+
     if (!user) {
+      setProfileLoading(false);
       router.replace('/login');
       return;
     }
-    
+
     const fetchUserProfile = async () => {
-      setProfileLoading(true);
       if (!firestore) return;
       const userDocRef = doc(firestore, "users", user.uid);
       try {
         const userDocSnap = await getDoc(userDocRef);
-
         if (userDocSnap.exists()) {
           const profile = userDocSnap.data() as UserProfile;
           if (profile.role) {
@@ -109,11 +109,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
       }
     };
 
-    if (user && !userProfile) {
-      fetchUserProfile();
-    } else if (!user) {
-      setProfileLoading(false);
-    }
+    fetchUserProfile();
 
   }, [user, isUserLoading, firestore, auth, router, toast]);
 
