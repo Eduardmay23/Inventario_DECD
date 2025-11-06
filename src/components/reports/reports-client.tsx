@@ -127,7 +127,7 @@ export default function ReportsClient({ products, loans }: ReportsClientProps) {
             <div className="rounded-md border bg-muted/30 p-4 leading-relaxed report-printable-area">
               <ReportViewer report={report} />
             </div>
-            <div className="flex items-center gap-2 print-hide">
+            <div className="flex items-center gap-4 print-hide">
               <Button variant="outline" size="sm" onClick={handleCloseReport}>
                 Cerrar
               </Button>
