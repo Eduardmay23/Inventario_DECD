@@ -68,7 +68,7 @@ export async function saveUser(newUser: Omit<User, 'id'>): Promise<{ success: bo
 export async function updateUser(userId: string, updatedData: Partial<Omit<User, 'id' | 'role'>>): Promise<{ success: boolean; error?: string; data?: User }> {
     // Al editar, los campos son opcionales
     const editSchema = userSchema.partial().extend({
-      password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres.").optional().or(z.literal('')),
+      password: z.string().min(6, "La nueva contraseña debe tener al menos 6 caracteres.").optional().or(z.literal('')),
     });
     const result = editSchema.safeParse(updatedData);
 
@@ -100,10 +100,8 @@ export async function updateUser(userId: string, updatedData: Partial<Omit<User,
             // Solo actualiza la contraseña si se proporcionó una nueva y no está vacía
             password: (newPassword && newPassword.length > 0) ? newPassword : existingUser.password
         };
-        // @ts-ignore
-        delete finalUserData.id; // Nos aseguramos de no cambiar el id
         
-        data.users[userIndex] = { ...finalUserData, id: userId };
+        data.users[userIndex] = { ...finalUserData, id: userId, role: existingUser.role };
 
         await writeUsers(data);
         return { success: true, data: data.users[userIndex] };

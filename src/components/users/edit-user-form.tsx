@@ -64,11 +64,31 @@ export function EditUserForm({ user, onSubmit, isPending }: EditUserFormProps) {
 
 
   function handleFormSubmit(values: z.infer<typeof formSchema>) {
-    const dataToSubmit: Partial<z.infer<typeof formSchema>> = { ...values };
-    // No enviar la contraseña si el campo está vacío
-    if (!values.password) {
-      delete dataToSubmit.password;
+    // Creamos un objeto para enviar solo los datos modificados.
+    const dataToSubmit: Partial<z.infer<typeof formSchema>> = {};
+
+    // Comparamos cada campo con los valores originales del usuario
+    if (values.name !== user.name) {
+      dataToSubmit.name = values.name;
     }
+    if (values.username !== user.username) {
+      dataToSubmit.username = values.username;
+    }
+    // Solo incluimos la contraseña si se escribió una nueva
+    if (values.password && values.password.length > 0) {
+      dataToSubmit.password = values.password;
+    }
+    // Comparamos los arrays de permisos
+    if (JSON.stringify(values.permissions.sort()) !== JSON.stringify(user.permissions.sort())) {
+       dataToSubmit.permissions = values.permissions;
+    }
+    
+    // Si no hay cambios, no hacemos nada (o podríamos mostrar un mensaje)
+    if (Object.keys(dataToSubmit).length === 0) {
+        form.reset(); // Opcional: cerrar el diálogo si no hay cambios.
+        return;
+    }
+    
     onSubmit(dataToSubmit);
   }
 

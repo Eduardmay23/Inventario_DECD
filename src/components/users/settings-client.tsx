@@ -51,7 +51,6 @@ type SettingsClientProps = {
 
 export default function SettingsClient({ initialUsers }: SettingsClientProps) {
   const router = useRouter();
-  const [users, setUsers] = useState<User[]>(initialUsers);
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [isEditUserOpen, setIsEditUserOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
@@ -94,7 +93,7 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
     setIsEditUserOpen(true);
   };
 
-  const handleUpdateUser = (userId: string, data: Partial<User>) => {
+  const handleUpdateUser = (userId: string, data: Partial<Omit<User, 'id' | 'role'>>) => {
     startTransition(async () => {
         const result = await updateUser(userId, data);
         if (result.success) {
