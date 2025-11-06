@@ -6,8 +6,9 @@ import { usePathname, useRouter } from "next/navigation";
 import { Home, Package, Settings, ArrowRightLeft, LogOut, Loader2, ShieldAlert } from "lucide-react";
 import React, { useEffect, useState } from 'react';
 
-import { useUser, useAuth } from '@/firebase';
+import { useUser, useAuth, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
+import { doc } from "firebase/firestore";
 
 import {
   SidebarProvider,
@@ -31,21 +32,22 @@ import {
 import { Icons } from "@/components/icons";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-
-// This will be replaced by Firestore data later.
-type UserProfile = {
-  name: string;
-  username: string;
-  role: 'admin' | 'user';
-  permissions: string[];
-};
+import type { User } from "@/lib/types";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const auth = useAuth();
+  const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+
+  const userDocRef = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user]);
+
+  const { data: profile, isLoading: isProfileLoading } = useDoc<User>(userDocRef);
+
   const [hasAccess, setHasAccess] = useState(false);
 
   useEffect(() => {
@@ -55,17 +57,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [isUserLoading, user, router]);
 
   useEffect(() => {
-    if (user) {
-      // For now, we'll create a mock profile.
-      // This will be replaced with a Firestore document read.
-      const mockProfile: UserProfile = {
-        name: user.displayName || 'Usuario',
-        username: user.email || 'user@example.com',
-        role: 'admin', // Hardcoded for now
-        permissions: ['dashboard', 'inventory', 'loans', 'settings'] // Hardcoded
-      };
-      setProfile(mockProfile);
-
+    if (user && profile) {
       // Check for access
       const currentRoute = pathname.split('/')[1] || 'dashboard';
       const routePermissionMap: { [key: string]: string } = {
@@ -78,17 +70,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       
       const requiredPermission = routePermissionMap[currentRoute];
 
-      if (requiredPermission && (mockProfile.permissions?.includes(requiredPermission) || mockProfile.role === 'admin')) {
+      if (requiredPermission && (profile.permissions?.includes(requiredPermission) || profile.role === 'admin')) {
         setHasAccess(true);
       } else {
         setHasAccess(false);
       }
+    } else if (!isUserLoading && !isProfileLoading) {
+        // If there's a user but no profile, or vice versa, something is wrong.
+        // For now, deny access. A more robust solution might log this error.
+        setHasAccess(false);
     }
-  }, [user, pathname]);
+  }, [user, profile, pathname, isUserLoading, isProfileLoading]);
 
 
   const handleLogout = async () => {
-    await signOut(auth);
+    if (auth) {
+      await signOut(auth);
+    }
     // The useEffect hook will handle the redirection
   };
 
@@ -101,7 +99,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return name.substring(0, 2).toUpperCase();
   }
 
-  if (isUserLoading || !user || !profile) {
+  if (isUserLoading || isProfileLoading || !user || !profile) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
