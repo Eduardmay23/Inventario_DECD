@@ -1,10 +1,11 @@
 
 "use client";
 
-import { useState } from "react";
-import { PlusCircle, MoreHorizontal, CheckCircle, Trash2, Printer } from "lucide-react";
+import { useState, useTransition } from "react";
+import { PlusCircle, MoreHorizontal, CheckCircle, Trash2, Printer, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { useRouter } from 'next/navigation';
 
 import type { Loan, Product } from "@/lib/types";
 import AppHeader from "@/components/header";
@@ -48,6 +49,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AddLoanForm } from "./add-loan-form";
 import { LoanReceipt } from "./loan-receipt";
+import { saveLoan, updateLoanStatus, deleteLoan } from "@/app/actions";
 
 
 type LoansClientProps = {
@@ -56,6 +58,8 @@ type LoansClientProps = {
 };
 
 export default function LoansClient({ loans, products }: LoansClientProps) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isReceiptDialogOpen, setIsReceiptDialogOpen] = useState(false);
@@ -65,18 +69,42 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
   const [recibidoPor, setRecibidoPor] = useState('');
   const { toast } = useToast();
 
-  const handleAddLoan = async (loanData: Omit<Loan, 'id' | 'status' | 'productName'>, productName: string) => {
-    toast({
-        title: "Éxito (Simulado)",
-        description: `El préstamo para "${productName}" ha sido registrado.`,
+  const handleAddLoan = async (loanData: Omit<Loan, 'id' | 'status'>) => {
+    startTransition(async () => {
+        const result = await saveLoan(loanData);
+        if (result.success) {
+            toast({
+                title: "Préstamo Registrado",
+                description: `El préstamo para "${loanData.productName}" ha sido guardado.`,
+            });
+            setIsAddDialogOpen(false);
+            router.refresh();
+        } else {
+            toast({
+                variant: "destructive",
+                title: "Error al registrar",
+                description: result.error || "No se pudo registrar el préstamo.",
+            });
+        }
     });
-    setIsAddDialogOpen(false);
   };
   
   const handleMarkAsReturned = async (loan: Loan) => {
-    toast({
-        title: "Actualizado (Simulado)",
-        description: "El préstamo ha sido marcado como devuelto y el stock ha sido repuesto.",
+    startTransition(async () => {
+        const result = await updateLoanStatus(loan.id, "Devuelto");
+        if (result.success) {
+            toast({
+                title: "Préstamo Actualizado",
+                description: "El producto ha sido marcado como devuelto y el stock ha sido repuesto.",
+            });
+            router.refresh();
+        } else {
+            toast({
+                variant: "destructive",
+                title: "Error al actualizar",
+                description: result.error || "No se pudo actualizar el estado del préstamo.",
+            });
+        }
     });
   };
 
@@ -94,13 +122,25 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
 
   const confirmDelete = () => {
     if (loanToDelete) {
-      toast({
-        title: "Éxito (Simulado)",
-        description: `El préstamo para "${loanToDelete.productName}" ha sido eliminado.`,
+      startTransition(async () => {
+        const result = await deleteLoan(loanToDelete.id);
+        if (result.success) {
+          toast({
+            title: "Préstamo Eliminado",
+            description: `El registro del préstamo para "${loanToDelete.productName}" ha sido eliminado.`,
+          });
+          router.refresh();
+        } else {
+          toast({
+            variant: "destructive",
+            title: "Error al eliminar",
+            description: result.error || "No se pudo eliminar el registro del préstamo.",
+          });
+        }
+        setIsDeleteDialogOpen(false);
+        setLoanToDelete(null);
       });
-      setLoanToDelete(null);
     }
-    setIsDeleteDialogOpen(false);
   };
 
   const handlePrint = () => {
@@ -109,12 +149,14 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
     }, 100);
   };
 
+  const sortedLoans = [...loans].sort((a, b) => new Date(b.loanDate).getTime() - new Date(a.loanDate).getTime());
+
   return (
     <>
       <div className="print-hide">
         <AppHeader title="Préstamos">
           <div className="flex items-center gap-2">
-              <Button size="sm" onClick={() => setIsAddDialogOpen(true)}>
+              <Button size="sm" onClick={() => setIsAddDialogOpen(true)} disabled={isPending}>
                   <PlusCircle className="h-4 w-4 mr-2" />
                   Registrar Préstamo
               </Button>
@@ -142,9 +184,9 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
                           </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {loans.length > 0 ? (
-                              loans.map((loan, index) => (
-                                <TableRow key={loan.id || index}>
+                            {sortedLoans.length > 0 ? (
+                              sortedLoans.map((loan) => (
+                                <TableRow key={loan.id}>
                                 <TableCell className="font-medium">{loan.productName}</TableCell>
                                 <TableCell>{loan.requester}</TableCell>
                                 <TableCell>
@@ -165,7 +207,7 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
                                 <TableCell>
                                     <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                        <Button aria-haspopup="true" size="icon" variant="ghost">
+                                        <Button aria-haspopup="true" size="icon" variant="ghost" disabled={isPending}>
                                         <MoreHorizontal className="h-4 w-4" />
                                         <span className="sr-only">Alternar menú</span>
                                         </Button>
@@ -178,13 +220,13 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
                                         <DropdownMenuSeparator />
                                         <DropdownMenuItem 
                                             onSelect={() => handleMarkAsReturned(loan)}
-                                            disabled={loan.status === 'Devuelto'}
+                                            disabled={loan.status === 'Devuelto' || isPending}
                                         >
                                             <CheckCircle className="mr-2 h-4 w-4" /> Marcar como Devuelto
                                         </DropdownMenuItem>
                                         <DropdownMenuItem
                                           onSelect={() => handleDeleteClick(loan)}
-                                          disabled={loan.status !== 'Devuelto'}
+                                          disabled={loan.status !== 'Devuelto' || isPending}
                                           className="text-destructive focus:bg-destructive/10 focus:text-destructive"
                                         >
                                           <Trash2 className="mr-2 h-4 w-4" /> Eliminar
@@ -208,30 +250,31 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
           </Card>
         </main>
 
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <Dialog open={isAddDialogOpen} onOpenChange={!isPending ? setIsAddDialogOpen : undefined}>
             <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
                 <DialogTitle>Registrar Nuevo Préstamo</DialogTitle>
                 <DialogDescription>
-                Rellena los detalles del nuevo préstamo.
+                Rellena los detalles del nuevo préstamo. El stock del producto se actualizará automáticamente.
                 </DialogDescription>
             </DialogHeader>
-            <AddLoanForm onSubmit={handleAddLoan} products={products} />
+            <AddLoanForm onSubmit={handleAddLoan} products={products} isPending={isPending} />
             </DialogContent>
         </Dialog>
         
-        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={!isPending ? setIsDeleteDialogOpen : undefined}>
             <AlertDialogContent>
             <AlertDialogHeader>
-                <AlertDialogTitle>¿Estás absolutamente seguro?</AlertDialogTitle>
+                <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
                 <AlertDialogDescription>
-                    Esta acción no se puede deshacer. Esto eliminará permanentemente el préstamo del producto "{loanToDelete?.productName}".
+                    Esta acción eliminará permanentemente el registro del préstamo para "{loanToDelete?.productName}". Esta acción solo debe realizarse en préstamos ya devueltos.
                 </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                Eliminar
+                <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90" disabled={isPending}>
+                  {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {isPending ? "Eliminando..." : "Eliminar"}
                 </AlertDialogAction>
             </AlertDialogFooter>
             </AlertDialogContent>
@@ -239,10 +282,10 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
 
         <Dialog open={isReceiptDialogOpen} onOpenChange={setIsReceiptDialogOpen} >
             <DialogContent className="w-full max-w-3xl loan-receipt-printable-area">
-              <DialogHeader>
+              <DialogHeader className="print-hide-in-dialog">
                   <DialogTitle>Vista Previa del Comprobante</DialogTitle>
                   <DialogDescription>
-                  Así es como se verá tu comprobante. Puedes editar los campos de "Entregado por" y "Recibido por" antes de imprimir.
+                  Así es como se verá tu comprobante. Puedes editar los campos antes de imprimir.
                   </DialogDescription>
               </DialogHeader>
               {loanToPrint && (
@@ -254,7 +297,7 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
                   setRecibidoPor={setRecibidoPor}
                 />
               )}
-              <DialogFooter>
+              <DialogFooter className="print-hide-in-dialog">
                   <Button variant="outline" onClick={() => setIsReceiptDialogOpen(false)}>Cancelar</Button>
                   <Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4" />Imprimir</Button>
               </DialogFooter>
@@ -264,5 +307,3 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
     </>
   );
 }
-
-    

@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { Calendar as CalendarIcon } from "lucide-react";
+import { Calendar as CalendarIcon, Loader2 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -50,11 +50,12 @@ const formSchema = z.object({
 });
 
 type AddLoanFormProps = {
-  onSubmit: (data: Omit<Loan, 'id' | 'status' | 'productName'>, productName: string) => void;
+  onSubmit: (data: Omit<Loan, 'id' | 'status'>) => void;
   products: Product[];
+  isPending: boolean;
 };
 
-export function AddLoanForm({ onSubmit, products }: AddLoanFormProps) {
+export function AddLoanForm({ onSubmit, products, isPending }: AddLoanFormProps) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -69,7 +70,6 @@ export function AddLoanForm({ onSubmit, products }: AddLoanFormProps) {
 
   function handleFormSubmit(values: z.infer<typeof formSchema>) {
     if (!selectedProduct) {
-        console.error("Error: No se pudo encontrar el producto seleccionado.");
         form.setError("productId", { type: "manual", message: "Producto no válido." });
         return;
     }
@@ -81,11 +81,11 @@ export function AddLoanForm({ onSubmit, products }: AddLoanFormProps) {
 
     onSubmit({
         productId: values.productId,
+        productName: selectedProduct.name,
         requester: values.requester,
         loanDate: values.loanDate.toISOString(),
         quantity: values.quantity,
-    }, selectedProduct.name);
-    form.reset();
+    });
   }
 
   return (
@@ -97,7 +97,7 @@ export function AddLoanForm({ onSubmit, products }: AddLoanFormProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Producto</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isPending}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecciona un producto" />
@@ -122,7 +122,7 @@ export function AddLoanForm({ onSubmit, products }: AddLoanFormProps) {
             <FormItem>
               <FormLabel>Cantidad a prestar</FormLabel>
               <FormControl>
-                <Input type="number" min="1" max={selectedProduct?.quantity} {...field} />
+                <Input type="number" min="1" max={selectedProduct?.quantity} {...field} disabled={isPending || !selectedProduct} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -135,7 +135,7 @@ export function AddLoanForm({ onSubmit, products }: AddLoanFormProps) {
             <FormItem>
               <FormLabel>Quién lo pide</FormLabel>
               <FormControl>
-                <Input placeholder="Ej: Equipo de Marketing" {...field} />
+                <Input placeholder="Ej: Equipo de Marketing" {...field} disabled={isPending} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -156,6 +156,7 @@ export function AddLoanForm({ onSubmit, products }: AddLoanFormProps) {
                                 "pl-3 text-left font-normal",
                                 !field.value && "text-muted-foreground"
                             )}
+                            disabled={isPending}
                             >
                             {field.value ? (
                                 format(field.value, "PPP", { locale: es })
@@ -183,7 +184,10 @@ export function AddLoanForm({ onSubmit, products }: AddLoanFormProps) {
                 </FormItem>
             )}
         />
-        <Button type="submit" className="w-full">Guardar Préstamo</Button>
+        <Button type="submit" className="w-full" disabled={isPending}>
+            {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isPending ? "Guardando..." : "Guardar Préstamo"}
+        </Button>
       </form>
     </Form>
   );

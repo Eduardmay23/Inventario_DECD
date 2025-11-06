@@ -4,7 +4,7 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import { z } from 'zod';
-import type { User, Product } from '@/lib/types';
+import type { User, Product, Loan } from '@/lib/types';
 
 const userSchema = z.object({
   name: z.string().min(2, "El nombre debe tener al menos 2 caracteres."),
@@ -23,25 +23,37 @@ const productSchema = z.object({
     reorderPoint: z.coerce.number().int().min(0, "El punto de reorden no puede ser negativo."),
 });
 
+const loanSchema = z.object({
+    productId: z.string(),
+    productName: z.string(),
+    requester: z.string().min(2, "El solicitante debe tener al menos 2 caracteres."),
+    loanDate: z.string().datetime(),
+    quantity: z.coerce.number().int().min(1, "La cantidad debe ser al menos 1."),
+});
+
+
 const usersFilePath = path.join(process.cwd(), 'src', 'lib', 'users.json');
 const productsFilePath = path.join(process.cwd(), 'src', 'lib', 'products.json');
+const loansFilePath = path.join(process.cwd(), 'src', 'lib', 'loans.json');
+
+// HELPERS
+async function readData<T>(filePath: string, defaultData: T): Promise<T> {
+    try {
+        const data = await fs.readFile(filePath, 'utf-8');
+        return JSON.parse(data);
+    } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT') return defaultData;
+        console.error(`Error reading ${filePath}:`, error);
+        return defaultData;
+    }
+}
+
+async function writeData<T>(filePath: string, data: T): Promise<void> {
+    await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8');
+}
+
 
 // USER ACTIONS
-async function readUsers(): Promise<{ users: User[] }> {
-  try {
-    const data = await fs.readFile(usersFilePath, 'utf-8');
-    return JSON.parse(data);
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return { users: [] };
-    console.error('Error reading users.json:', error);
-    return { users: [] };
-  }
-}
-
-async function writeUsers(data: { users: User[] }): Promise<void> {
-  await fs.writeFile(usersFilePath, JSON.stringify(data, null, 2), 'utf-8');
-}
-
 export async function saveUser(newUser: Omit<User, 'id'>): Promise<{ success: boolean, error?: string, data?: User }> {
   const createSchema = userSchema.extend({
     password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres."),
@@ -55,7 +67,7 @@ export async function saveUser(newUser: Omit<User, 'id'>): Promise<{ success: bo
   }
   
   try {
-    const data = await readUsers();
+    const data = await readData(usersFilePath, { users: [] });
     
     const userExists = data.users.some(user => user.username.toLowerCase() === result.data.username.toLowerCase());
     if (userExists) {
@@ -68,7 +80,7 @@ export async function saveUser(newUser: Omit<User, 'id'>): Promise<{ success: bo
     };
 
     data.users.push(userWithId);
-    await writeUsers(data);
+    await writeData(usersFilePath, data);
     return { success: true, data: userWithId };
   } catch (error: any) {
     console.error('Failed to save user:', error);
@@ -88,7 +100,7 @@ export async function updateUser(userId: string, updatedData: Partial<Omit<User,
     }
 
     try {
-        const data = await readUsers();
+        const data = await readData(usersFilePath, { users: [] });
         const userIndex = data.users.findIndex(user => user.id === userId);
 
         if (userIndex === -1) {
@@ -106,7 +118,7 @@ export async function updateUser(userId: string, updatedData: Partial<Omit<User,
         
         data.users[userIndex] = { ...finalUserData, id: userId, role: existingUser.role };
 
-        await writeUsers(data);
+        await writeData(usersFilePath, data);
         return { success: true, data: data.users[userIndex] };
     } catch (error: any) {
         console.error('Failed to update user:', error);
@@ -117,7 +129,7 @@ export async function updateUser(userId: string, updatedData: Partial<Omit<User,
 
 export async function deleteUser(userId: string): Promise<{ success: boolean; error?: string; data?: { userId: string } }> {
     try {
-        const data = await readUsers();
+        const data = await readData(usersFilePath, { users: [] });
         
         const initialUserCount = data.users.length;
         data.users = data.users.filter(user => user.id !== userId);
@@ -126,7 +138,7 @@ export async function deleteUser(userId: string): Promise<{ success: boolean; er
             return { success: false, error: 'No se encontró el usuario a eliminar.' };
         }
 
-        await writeUsers(data);
+        await writeData(usersFilePath, data);
         return { success: true, data: { userId } };
     } catch (error: any) {
         console.error('Failed to delete user:', error);
@@ -136,21 +148,6 @@ export async function deleteUser(userId: string): Promise<{ success: boolean; er
 
 
 // PRODUCT ACTIONS
-async function readProducts(): Promise<{ products: Product[] }> {
-  try {
-    const data = await fs.readFile(productsFilePath, 'utf-8');
-    return JSON.parse(data);
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return { products: [] };
-    console.error('Error reading products.json:', error);
-    return { products: [] };
-  }
-}
-
-async function writeProducts(data: { products: Product[] }): Promise<void> {
-  await fs.writeFile(productsFilePath, JSON.stringify(data, null, 2), 'utf-8');
-}
-
 export async function saveProduct(newProduct: Omit<Product, 'id'>): Promise<{ success: boolean, error?: string, data?: Product }> {
   const result = productSchema.safeParse(newProduct);
 
@@ -160,7 +157,7 @@ export async function saveProduct(newProduct: Omit<Product, 'id'>): Promise<{ su
   }
   
   try {
-    const data = await readProducts();
+    const data = await readData(productsFilePath, { products: [] });
     
     const skuExists = data.products.some(p => p.sku.toLowerCase() === result.data.sku.toLowerCase());
     if (skuExists) {
@@ -173,7 +170,7 @@ export async function saveProduct(newProduct: Omit<Product, 'id'>): Promise<{ su
     };
 
     data.products.push(productWithId);
-    await writeProducts(data);
+    await writeData(productsFilePath, data);
     return { success: true, data: productWithId };
   } catch (error: any) {
     console.error('Failed to save product:', error);
@@ -190,7 +187,7 @@ export async function updateProduct(productId: string, updatedData: Partial<Omit
     }
 
     try {
-        const data = await readProducts();
+        const data = await readData(productsFilePath, { products: [] });
         const productIndex = data.products.findIndex(p => p.id === productId);
 
         if (productIndex === -1) {
@@ -208,7 +205,7 @@ export async function updateProduct(productId: string, updatedData: Partial<Omit
 
         data.products[productIndex] = { ...existingProduct, ...result.data };
 
-        await writeProducts(data);
+        await writeData(productsFilePath, data);
         return { success: true, data: data.products[productIndex] };
     } catch (error: any) {
         console.error('Failed to update product:', error);
@@ -218,7 +215,7 @@ export async function updateProduct(productId: string, updatedData: Partial<Omit
 
 export async function deleteProduct(productId: string): Promise<{ success: boolean; error?: string; }> {
     try {
-        const data = await readProducts();
+        const data = await readData(productsFilePath, { products: [] });
         
         const initialCount = data.products.length;
         data.products = data.products.filter(p => p.id !== productId);
@@ -227,10 +224,107 @@ export async function deleteProduct(productId: string): Promise<{ success: boole
             return { success: false, error: 'No se encontró el producto a eliminar.' };
         }
 
-        await writeProducts(data);
+        await writeData(productsFilePath, data);
         return { success: true };
     } catch (error: any) {
         console.error('Failed to delete product:', error);
         return { success: false, error: error.message || 'An unknown error occurred' };
+    }
+}
+
+// LOAN ACTIONS
+export async function saveLoan(loanData: Omit<Loan, 'id' | 'status'>): Promise<{ success: boolean, error?: string, data?: Loan }> {
+    const result = loanSchema.safeParse(loanData);
+    if (!result.success) {
+        const firstError = Object.values(result.error.flatten().fieldErrors)[0]?.[0];
+        return { success: false, error: firstError || "Datos de préstamo inválidos." };
+    }
+    
+    try {
+        const loansData = await readData(loansFilePath, { loans: [] });
+        const productsData = await readData(productsFilePath, { products: [] });
+
+        const productIndex = productsData.products.findIndex(p => p.id === result.data.productId);
+        if (productIndex === -1) {
+            return { success: false, error: "El producto seleccionado ya no existe." };
+        }
+        
+        const product = productsData.products[productIndex];
+        if (product.quantity < result.data.quantity) {
+            return { success: false, error: `Stock insuficiente. Solo quedan ${product.quantity} unidades.` };
+        }
+
+        // Descontar stock
+        product.quantity -= result.data.quantity;
+        await writeData(productsFilePath, productsData);
+        
+        // Crear préstamo
+        const newLoan: Loan = {
+            ...result.data,
+            id: (Date.now() + Math.random()).toString(36),
+            status: "Prestado",
+        };
+
+        loansData.loans.push(newLoan);
+        await writeData(loansFilePath, loansData);
+
+        return { success: true, data: newLoan };
+    } catch (e: any) {
+        console.error("Failed to save loan:", e);
+        return { success: false, error: e.message || "Ocurrió un error desconocido." };
+    }
+}
+
+export async function updateLoanStatus(loanId: string, status: 'Prestado' | 'Devuelto'): Promise<{ success: boolean; error?: string }> {
+    try {
+        const loansData = await readData(loansFilePath, { loans: [] });
+        const loanIndex = loansData.loans.findIndex(l => l.id === loanId);
+        if (loanIndex === -1) {
+            return { success: false, error: 'No se encontró el préstamo.' };
+        }
+
+        const loan = loansData.loans[loanIndex];
+        if (loan.status === status) {
+             return { success: true }; // No hay cambios que hacer
+        }
+
+        // Solo reponer stock si se marca como Devuelto
+        if (status === 'Devuelto') {
+            const productsData = await readData(productsFilePath, { products: [] });
+            const productIndex = productsData.products.findIndex(p => p.id === loan.productId);
+            if (productIndex !== -1) {
+                productsData.products[productIndex].quantity += loan.quantity;
+                await writeData(productsFilePath, productsData);
+            }
+        }
+        
+        loan.status = status;
+        await writeData(loansFilePath, loansData);
+        return { success: true };
+
+    } catch (e: any) {
+        console.error('Failed to update loan status:', e);
+        return { success: false, error: e.message || 'Ocurrió un error desconocido.' };
+    }
+}
+
+export async function deleteLoan(loanId: string): Promise<{ success: boolean; error?: string }> {
+    try {
+        const loansData = await readData(loansFilePath, { loans: [] });
+        const initialCount = loansData.loans.length;
+        loansData.loans = loansData.loans.filter(l => l.id !== loanId);
+
+        if (loansData.loans.length === initialCount) {
+            return { success: false, error: 'No se encontró el préstamo a eliminar.' };
+        }
+
+        // Nota: Eliminar un préstamo NO repone el stock. Se debe marcar como devuelto primero.
+        // Si el préstamo se elimina en estado "Prestado", ese stock se considera perdido.
+
+        await writeData(loansFilePath, loansData);
+        return { success: true };
+    } catch (e: any) {
+        console.error('Failed to delete loan:', e);
+        return { success: false, error: e.message || 'Ocurrió un error desconocido.' };
     }
 }
