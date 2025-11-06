@@ -45,7 +45,7 @@ import type { User } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 import { useFirestore, useAuth, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
 import { FirebaseError } from 'firebase/app';
 
 type SettingsClientProps = {
@@ -67,13 +67,11 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
-  const handleAddUser = (newUser: Omit<User, 'id'>) => {
+  const handleAddUser = (newUser: Omit<User, 'id' | 'role' | 'uid'>) => {
     startTransition(async () => {
       try {
         const email = `${newUser.username}@${DUMMY_DOMAIN}`;
         
-        // Creating the user in Firebase Auth. We use the currently signed-in admin's auth instance.
-        // For production, you might use a Cloud Function for user creation to avoid needing a separate auth instance.
         const { user: newAuthUser } = await createUserWithEmailAndPassword(auth, email, newUser.password!);
         
         const userDocData = {
@@ -84,8 +82,8 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
           permissions: newUser.permissions,
         };
 
-        // Use the uid from Auth as the document ID in Firestore for consistency
-        await setDoc(doc(firestore, "users", newAuthUser.uid), userDocData);
+        const userDocRef = doc(firestore, "users", newAuthUser.uid);
+        setDocumentNonBlocking(userDocRef, userDocData, {});
 
         toast({
           title: "Usuario Creado",
@@ -126,11 +124,9 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
     setIsEditUserOpen(true);
   };
 
-  const handleUpdateUser = (userId: string, data: Partial<Omit<User, 'id' | 'role'>>) => {
-    startTransition(async () => {
-      try {
+  const handleUpdateUser = (userId: string, data: Partial<Omit<User, 'id' | 'role' | 'uid'>>) => {
+    startTransition(() => {
         const userDocRef = doc(firestore, "users", userId);
-        // We only support updating permissions for now.
         setDocumentNonBlocking(userDocRef, { permissions: data.permissions }, { merge: true });
         
         toast({
@@ -139,13 +135,6 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
         });
         setIsEditUserOpen(false);
         router.refresh();
-      } catch (e) {
-         toast({
-            variant: "destructive",
-            title: "Error al Actualizar",
-            description: "No se pudo actualizar el usuario.",
-        });
-      }
     });
   };
 
@@ -165,11 +154,7 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
 
   const confirmDelete = () => {
     if (userToDelete) {
-      startTransition(async () => {
-        try {
-          // Deleting users from the client is a sensitive operation and not recommended
-          // without re-authentication, which complicates the UX in this admin panel.
-          // We will delete the Firestore document but leave the auth user for now.
+      startTransition(() => {
           const userDocRef = doc(firestore, "users", userToDelete.id);
           deleteDocumentNonBlocking(userDocRef);
 
@@ -177,17 +162,10 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
             title: "Usuario Eliminado",
             description: `El registro del usuario "${userToDelete.username}" ha sido eliminado de la base de datos. La cuenta de autenticación no fue eliminada.`,
           });
-          router.refresh();
-        } catch (e: any) {
-          toast({
-            variant: "destructive",
-            title: "Error al Eliminar",
-            description: "No se pudo eliminar el registro del usuario. La cuenta de autenticación puede requerir una nueva autenticación.",
-          });
-        } finally {
+          
           setIsDeleteConfirmOpen(false);
           setUserToDelete(null);
-        }
+          router.refresh();
       });
     }
   }
@@ -345,3 +323,5 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
     </>
   );
 }
+
+    

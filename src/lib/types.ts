@@ -29,6 +29,7 @@ export type Loan = {
 
 export type User = {
     id: string; // This will be the Firebase Auth UID
+    uid: string; // Explicitly keep uid as it's used in Firestore doc
     username: string; // This will be the email
     password?: string; // Only used for creation, not stored in Firestore
     name: string;
@@ -42,3 +43,5 @@ export type UserProfile = {
   name: string;
   role: 'admin' | 'user';
 };
+
+    
