@@ -17,10 +17,16 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useAuth } from '@/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { FirebaseError } from 'firebase/app';
+import { doc, setDoc } from 'firebase/firestore';
+import { useFirestore } from '@/firebase';
+
+
+const DUMMY_DOMAIN = 'stockwise.local';
 
 export default function LoginPage() {
   const router = useRouter();
   const auth = useAuth();
+  const firestore = useFirestore();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -30,32 +36,43 @@ export default function LoginPage() {
     setError(null);
 
     const formData = new FormData(event.currentTarget);
-    const email = formData.get('email') as string;
+    const username = formData.get('username') as string;
     const password = formData.get('password') as string;
+    const email = `${username}@${DUMMY_DOMAIN}`;
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
       router.replace('/dashboard');
     } catch (e) {
       if (e instanceof FirebaseError && (e.code === 'auth/user-not-found' || e.code === 'auth/invalid-credential')) {
-        // User doesn't exist, let's create them
-        try {
-          await createUserWithEmailAndPassword(auth, email, password);
-          // The onAuthStateChanged listener in the layout will handle the redirect
-          // but we'll redirect manually just in case.
-          router.replace('/dashboard');
-        } catch (creationError) {
-          setError('No se pudo crear la cuenta de administrador. Inténtalo de nuevo.');
+        // Special case for the very first admin user
+        if (username === 'admin') {
+          try {
+            const { user: newAuthUser } = await createUserWithEmailAndPassword(auth, email, password);
+            const adminUserDoc = {
+                uid: newAuthUser.uid,
+                name: 'Administrador',
+                username: 'admin',
+                role: 'admin',
+                permissions: ['dashboard', 'inventory', 'loans', 'settings'],
+            };
+            await setDoc(doc(firestore, "users", newAuthUser.uid), adminUserDoc);
+            router.replace('/dashboard');
+          } catch (creationError) {
+             setError('No se pudo crear la cuenta de administrador. Inténtalo de nuevo.');
+          }
+        } else {
+             setError('Usuario o contraseña incorrectos.');
         }
       } else {
         let errorMessage = 'Ocurrió un error inesperado. Inténtalo de nuevo.';
         if (e instanceof FirebaseError) {
           switch (e.code) {
             case 'auth/wrong-password':
-              errorMessage = 'Correo electrónico o contraseña incorrectos.';
+              errorMessage = 'Usuario o contraseña incorrectos.';
               break;
             case 'auth/invalid-email':
-              errorMessage = 'El formato del correo electrónico no es válido.';
+              errorMessage = 'El formato del nombre de usuario no es válido.';
               break;
             default:
               errorMessage = 'Error de autenticación. Por favor, revisa tus credenciales.';
@@ -80,7 +97,7 @@ export default function LoginPage() {
           <CardHeader>
             <CardTitle className="text-2xl">Iniciar Sesión</CardTitle>
             <CardDescription>
-              Introduce tus credenciales para acceder al panel.
+              Introduce tu nombre de usuario y contraseña.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -93,14 +110,16 @@ export default function LoginPage() {
                 </Alert>
               )}
               <div className="grid gap-2">
-                <Label htmlFor="email">Correo Electrónico</Label>
+                <Label htmlFor="username">Nombre de Usuario</Label>
                 <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  placeholder="admin@example.com"
+                  id="username"
+                  name="username"
+                  type="text"
+                  placeholder="admin"
                   required
-                  defaultValue="admin@example.com"
+                  defaultValue="admin"
+                  autoCapitalize="none"
+                  autoCorrect="off"
                 />
               </div>
               <div className="grid gap-2">
@@ -123,7 +142,7 @@ export default function LoginPage() {
           </CardContent>
         </Card>
         <p className="px-8 text-center text-sm text-muted-foreground">
-          Usa cualquier correo y contraseña. Si no existen, se creará una cuenta nueva.
+          Usa 'admin' y 'password123' la primera vez para crear la cuenta de administrador.
         </p>
       </div>
     </main>

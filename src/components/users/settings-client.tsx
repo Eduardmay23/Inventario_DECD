@@ -44,13 +44,15 @@ import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 import { useFirestore, useAuth, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
-import { createUserWithEmailAndPassword, reauthenticateWithCredential, EmailAuthProvider, deleteUser as deleteFirebaseUser } from 'firebase/auth';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { FirebaseError } from 'firebase/app';
 
 type SettingsClientProps = {
   initialUsers: User[];
 };
+
+const DUMMY_DOMAIN = 'stockwise.local';
 
 export default function SettingsClient({ initialUsers }: SettingsClientProps) {
   const router = useRouter();
@@ -68,9 +70,11 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
   const handleAddUser = (newUser: Omit<User, 'id'>) => {
     startTransition(async () => {
       try {
-        // This is a temporary auth instance to create the user without affecting the current admin session.
-        // NOTE: This is generally not recommended for production apps without proper multi-admin management.
-        const { user: newAuthUser } = await createUserWithEmailAndPassword(auth, newUser.username, newUser.password!);
+        const email = `${newUser.username}@${DUMMY_DOMAIN}`;
+        
+        // Creating the user in Firebase Auth. We use the currently signed-in admin's auth instance.
+        // For production, you might use a Cloud Function for user creation to avoid needing a separate auth instance.
+        const { user: newAuthUser } = await createUserWithEmailAndPassword(auth, email, newUser.password!);
         
         const userDocData = {
           uid: newAuthUser.uid,
@@ -95,11 +99,9 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
         let description = "No se pudo crear el usuario. Inténtalo de nuevo.";
         if (error instanceof FirebaseError) {
           if (error.code === 'auth/email-already-in-use') {
-            description = 'Este correo electrónico ya está en uso por otra cuenta.';
+            description = 'Este nombre de usuario ya está en uso.';
           } else if (error.code === 'auth/weak-password') {
             description = 'La contraseña es demasiado débil. Debe tener al menos 6 caracteres.';
-          } else if (error.code === 'auth/invalid-email') {
-            description = 'El correo electrónico no es válido.';
           }
         }
         toast({
@@ -212,7 +214,7 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
               <CardHeader>
                 <CardTitle>Gestión de Usuarios</CardTitle>
                 <CardDescription>
-                  Añade, edita o elimina usuarios y gestiona sus permisos de acceso. Los datos se gestionan en Firestore.
+                  Añade, edita o elimina usuarios y gestiona sus permisos de acceso.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -220,7 +222,7 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
                     <TableHeader>
                         <TableRow>
                             <TableHead>Nombre</TableHead>
-                            <TableHead>Email</TableHead>
+                            <TableHead>Usuario</TableHead>
                             <TableHead>Rol</TableHead>
                             <TableHead>Permisos</TableHead>
                             <TableHead className='text-right'>Acciones</TableHead>
