@@ -31,7 +31,7 @@ const loanSchema = z.object({
     quantity: z.coerce.number().int().min(1, "La cantidad debe ser al menos 1."),
 });
 
-
+// JSON file paths are kept for reference but logic will be migrated to Firestore
 const usersFilePath = path.join(process.cwd(), 'src', 'lib', 'users.json');
 const productsFilePath = path.join(process.cwd(), 'src', 'lib', 'products.json');
 const loansFilePath = path.join(process.cwd(), 'src', 'lib', 'loans.json');
@@ -53,97 +53,20 @@ async function writeData<T>(filePath: string, data: T): Promise<void> {
 }
 
 
-// USER ACTIONS
+// USER ACTIONS - TO BE MIGRATED TO FIRESTORE
 export async function saveUser(newUser: Omit<User, 'id'>): Promise<{ success: boolean, error?: string, data?: User }> {
-  const createSchema = userSchema.extend({
-    password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres."),
-  });
-  
-  const result = createSchema.safeParse(newUser);
-
-  if (!result.success) {
-    const firstError = Object.values(result.error.flatten().fieldErrors)[0]?.[0];
-    return { success: false, error: firstError || "Datos de usuario inválidos." };
-  }
-  
-  try {
-    const data = await readData(usersFilePath, { users: [] });
-    
-    const userExists = data.users.some(user => user.username.toLowerCase() === result.data.username.toLowerCase());
-    if (userExists) {
-        return { success: false, error: 'El nombre de usuario ya existe.' };
-    }
-
-    const userWithId = {
-        ...result.data,
-        id: (Date.now() + Math.random()).toString(36),
-    };
-
-    data.users.push(userWithId);
-    await writeData(usersFilePath, data);
-    return { success: true, data: userWithId };
-  } catch (error: any) {
-    console.error('Failed to save user:', error);
-    return { success: false, error: error.message || 'An unknown error occurred' };
-  }
+  // This logic will be replaced by Firestore operations.
+  return { success: false, error: "La creación de usuarios ha sido deshabilitada temporalmente durante la migración." };
 }
 
 export async function updateUser(userId: string, updatedData: Partial<Omit<User, 'id' | 'role'>>): Promise<{ success: boolean; error?: string; data?: User }> {
-    const editSchema = userSchema.partial().extend({
-      password: z.string().min(6, "La nueva contraseña debe tener al menos 6 caracteres.").optional().or(z.literal('')),
-    });
-    const result = editSchema.safeParse(updatedData);
-
-    if (!result.success) {
-        const firstError = Object.values(result.error.flatten().fieldErrors)[0]?.[0];
-        return { success: false, error: firstError || "Datos de actualización inválidos." };
-    }
-
-    try {
-        const data = await readData(usersFilePath, { users: [] });
-        const userIndex = data.users.findIndex(user => user.id === userId);
-
-        if (userIndex === -1) {
-            return { success: false, error: 'No se encontró el usuario a actualizar.' };
-        }
-
-        const existingUser = data.users[userIndex];
-        
-        const newPassword = result.data.password;
-        const finalUserData = { 
-            ...existingUser, 
-            ...result.data,
-            password: (newPassword && newPassword.length > 0) ? newPassword : existingUser.password
-        };
-        
-        data.users[userIndex] = { ...finalUserData, id: userId, role: existingUser.role };
-
-        await writeData(usersFilePath, data);
-        return { success: true, data: data.users[userIndex] };
-    } catch (error: any) {
-        console.error('Failed to update user:', error);
-        return { success: false, error: error.message || 'An unknown error occurred while updating.' };
-    }
+    // This logic will be replaced by Firestore operations.
+    return { success: false, error: "La edición de usuarios ha sido deshabilitada temporalmente durante la migración." };
 }
 
-
 export async function deleteUser(userId: string): Promise<{ success: boolean; error?: string; data?: { userId: string } }> {
-    try {
-        const data = await readData(usersFilePath, { users: [] });
-        
-        const initialUserCount = data.users.length;
-        data.users = data.users.filter(user => user.id !== userId);
-
-        if (data.users.length === initialUserCount) {
-            return { success: false, error: 'No se encontró el usuario a eliminar.' };
-        }
-
-        await writeData(usersFilePath, data);
-        return { success: true, data: { userId } };
-    } catch (error: any) {
-        console.error('Failed to delete user:', error);
-        return { success: false, error: error.message || 'An unknown error occurred' };
-    }
+    // This logic will be replaced by Firestore operations.
+    return { success: false, error: "La eliminación de usuarios ha sido deshabilitada temporalmente durante la migración." };
 }
 
 

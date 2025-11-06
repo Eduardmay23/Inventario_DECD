@@ -1,25 +1,19 @@
 
-'use client'
-
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense } from 'react';
+import HomeClient from './home-client';
 import { Loader2 } from 'lucide-react';
 
 export default function HomePage() {
-  const router = useRouter();
-
-  useEffect(() => {
-    const session = sessionStorage.getItem('user-session');
-    if (session) {
-      router.replace('/dashboard');
-    } else {
-      router.replace('/login');
-    }
-  }, [router]);
-
   return (
-    <div className="flex h-screen w-full items-center justify-center bg-background">
-      <Loader2 className="h-8 w-8 animate-spin text-primary" />
-    </div>
+    // Usamos Suspense para mostrar un loader mientras el componente de cliente se carga.
+    <Suspense
+      fallback={
+        <div className="flex h-screen w-full items-center justify-center bg-background">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      }
+    >
+      <HomeClient />
+    </Suspense>
   );
 }

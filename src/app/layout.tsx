@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/toaster";
+import { FirebaseClientProvider } from "@/firebase/client-provider";
 import "./globals.css";
 import "./print.css";
 
@@ -26,10 +27,12 @@ export default function RootLayout({
           inter.variable
         )}
       >
-        <div className="printable-content">
-          {children}
-        </div>
-        <Toaster />
+        <FirebaseClientProvider>
+          <div className="printable-content">
+            {children}
+          </div>
+          <Toaster />
+        </FirebaseClientProvider>
       </body>
     </html>
   );

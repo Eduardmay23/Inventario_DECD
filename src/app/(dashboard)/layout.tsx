@@ -6,6 +6,9 @@ import { usePathname, useRouter } from "next/navigation";
 import { Home, Package, Settings, ArrowRightLeft, LogOut, Loader2, ShieldAlert } from "lucide-react";
 import React, { useEffect, useState } from 'react';
 
+import { useUser, useAuth } from '@/firebase';
+import { signOut } from 'firebase/auth';
+
 import {
   SidebarProvider,
   Sidebar,
@@ -29,7 +32,8 @@ import { Icons } from "@/components/icons";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 
-type UserSession = {
+// This will be replaced by Firestore data later.
+type UserProfile = {
   name: string;
   username: string;
   role: 'admin' | 'user';
@@ -39,47 +43,53 @@ type UserSession = {
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [isClient, setIsClient] = useState(false);
-  const [session, setSession] = useState<UserSession | null>(null);
+  const auth = useAuth();
+  const { user, isUserLoading } = useUser();
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [hasAccess, setHasAccess] = useState(false);
 
   useEffect(() => {
-    setIsClient(true);
-    try {
-      const sessionData = sessionStorage.getItem('user-session');
-      if (sessionData) {
-        const parsedSession: UserSession = JSON.parse(sessionData);
-        setSession(parsedSession);
-
-        // Check for access
-        const currentRoute = pathname.split('/')[1] || 'dashboard';
-        const routePermissionMap: { [key: string]: string } = {
-          '': 'dashboard',
-          'dashboard': 'dashboard',
-          'inventory': 'inventory',
-          'loans': 'loans',
-          'settings': 'settings'
-        };
-        
-        const requiredPermission = routePermissionMap[currentRoute];
-
-        if (requiredPermission && (parsedSession.permissions?.includes(requiredPermission) || parsedSession.role === 'admin')) {
-          setHasAccess(true);
-        } else {
-          setHasAccess(false);
-        }
-      } else {
-        router.replace('/login');
-      }
-    } catch (e) {
-      console.error("Failed to parse user session", e);
+    if (!isUserLoading && !user) {
       router.replace('/login');
     }
-  }, [router, pathname]);
+  }, [isUserLoading, user, router]);
 
-  const handleLogout = () => {
-    sessionStorage.removeItem('user-session');
-    router.replace('/login');
+  useEffect(() => {
+    if (user) {
+      // For now, we'll create a mock profile.
+      // This will be replaced with a Firestore document read.
+      const mockProfile: UserProfile = {
+        name: user.displayName || 'Usuario',
+        username: user.email || 'user@example.com',
+        role: 'admin', // Hardcoded for now
+        permissions: ['dashboard', 'inventory', 'loans', 'settings'] // Hardcoded
+      };
+      setProfile(mockProfile);
+
+      // Check for access
+      const currentRoute = pathname.split('/')[1] || 'dashboard';
+      const routePermissionMap: { [key: string]: string } = {
+        '': 'dashboard',
+        'dashboard': 'dashboard',
+        'inventory': 'inventory',
+        'loans': 'loans',
+        'settings': 'settings'
+      };
+      
+      const requiredPermission = routePermissionMap[currentRoute];
+
+      if (requiredPermission && (mockProfile.permissions?.includes(requiredPermission) || mockProfile.role === 'admin')) {
+        setHasAccess(true);
+      } else {
+        setHasAccess(false);
+      }
+    }
+  }, [user, pathname]);
+
+
+  const handleLogout = async () => {
+    await signOut(auth);
+    // The useEffect hook will handle the redirection
   };
 
   const getInitials = (name: string) => {
@@ -91,7 +101,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return name.substring(0, 2).toUpperCase();
   }
 
-  if (!isClient || !session) {
+  if (isUserLoading || !user || !profile) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -100,10 +110,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   const canView = (permission: string) => {
-    return session.role === 'admin' || session.permissions?.includes(permission);
+    return profile.role === 'admin' || profile.permissions?.includes(permission);
   }
 
-  const userRoleDisplay = session.role === 'admin' ? 'Administrador' : 'Usuario';
+  const userRoleDisplay = profile.role === 'admin' ? 'Administrador' : 'Usuario';
 
   return (
     <SidebarProvider>
@@ -158,7 +168,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   </SidebarMenuButton>
               </SidebarMenuItem>
             )}
-            {session.role === 'admin' && (
+            {profile.role === 'admin' && (
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
@@ -181,17 +191,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <DropdownMenuTrigger asChild>
                   <div className="flex items-center gap-3 px-2 py-1 rounded-md hover:bg-sidebar-accent cursor-pointer">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={`https://picsum.photos/seed/${session.username}/40/40`} alt={session.name} data-ai-hint="person avatar" />
-                      <AvatarFallback>{getInitials(session.name)}</AvatarFallback>
+                      <AvatarImage src={`https://picsum.photos/seed/${profile.username}/40/40`} alt={profile.name} data-ai-hint="person avatar" />
+                      <AvatarFallback>{getInitials(profile.name)}</AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col truncate">
-                      <span className="text-sm font-semibold">{session.name}</span>
+                      <span className="text-sm font-semibold">{profile.name}</span>
                       <span className="text-xs text-muted-foreground capitalize">{userRoleDisplay}</span>
                     </div>
                   </div>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56 mb-2" side="top" align="start">
-                  <DropdownMenuLabel>{session.username}</DropdownMenuLabel>
+                  <DropdownMenuLabel>{profile.username}</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onSelect={handleLogout} className="text-destructive focus:text-destructive">
                      <LogOut className="mr-2 h-4 w-4" /> Cerrar Sesión

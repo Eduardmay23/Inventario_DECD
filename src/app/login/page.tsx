@@ -3,7 +3,7 @@
 
 import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { Boxes, ShieldAlert } from 'lucide-react';
+import { Boxes, ShieldAlert, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -15,30 +15,48 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import usersData from '@/lib/users.json';
+import { useAuth } from '@/firebase';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { FirebaseError } from 'firebase/app';
 
 export default function LoginPage() {
   const router = useRouter();
+  const auth = useAuth();
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setIsLoading(true);
+    setError(null);
+
     const formData = new FormData(event.currentTarget);
-    const username = formData.get('username') as string;
+    const email = formData.get('email') as string;
     const password = formData.get('password') as string;
 
-    const user = usersData.users.find(
-      u => u.username.toLowerCase() === username.toLowerCase() && u.password === password
-    );
-
-    if (user) {
-      setError(null);
-      // Simulate successful login by setting a session flag with user data
-      const { password: _, ...sessionData } = user;
-      sessionStorage.setItem('user-session', JSON.stringify(sessionData));
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
       router.replace('/dashboard');
-    } else {
-      setError('Usuario o contraseña incorrectos. Inténtalo de nuevo.');
+    } catch (e) {
+      let errorMessage = 'Ocurrió un error inesperado. Inténtalo de nuevo.';
+      if (e instanceof FirebaseError) {
+        switch (e.code) {
+          case 'auth/user-not-found':
+          case 'auth/wrong-password':
+          case 'auth/invalid-credential':
+            errorMessage = 'Correo electrónico o contraseña incorrectos.';
+            break;
+          case 'auth/invalid-email':
+            errorMessage = 'El formato del correo electrónico no es válido.';
+            break;
+          default:
+            errorMessage = 'Error de autenticación. Por favor, revisa tus credenciales.';
+            break;
+        }
+      }
+      setError(errorMessage);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -66,14 +84,14 @@ export default function LoginPage() {
                 </Alert>
               )}
               <div className="grid gap-2">
-                <Label htmlFor="username">Usuario</Label>
+                <Label htmlFor="email">Correo Electrónico</Label>
                 <Input
-                  id="username"
-                  name="username"
-                  type="text"
-                  placeholder="admin"
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="admin@example.com"
                   required
-                  defaultValue="admin"
+                  defaultValue="admin@example.com"
                 />
               </div>
               <div className="grid gap-2">
@@ -88,14 +106,15 @@ export default function LoginPage() {
                   defaultValue="password123"
                 />
               </div>
-              <Button type="submit" className="w-full">
-                Entrar
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isLoading ? 'Iniciando sesión...' : 'Entrar'}
               </Button>
             </form>
           </CardContent>
         </Card>
         <p className="px-8 text-center text-sm text-muted-foreground">
-          Usuario por defecto: <span className="font-mono">admin</span>, Contraseña: <span className="font-mono">password123</span>
+          Usuario por defecto: <span className="font-mono">admin@example.com</span>, Contraseña: <span className="font-mono">password123</span>
         </p>
       </div>
     </main>

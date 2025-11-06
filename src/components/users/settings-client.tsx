@@ -172,7 +172,7 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
               <CardHeader>
                 <CardTitle>Gestión de Usuarios</CardTitle>
                 <CardDescription>
-                  Añade, edita o elimina usuarios y gestiona sus permisos de acceso. Los cambios son permanentes.
+                  Añade, edita o elimina usuarios y gestiona sus permisos de acceso. Los datos se gestionan en Firestore.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -180,7 +180,7 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
                     <TableHeader>
                         <TableRow>
                             <TableHead>Nombre</TableHead>
-                            <TableHead>Usuario</TableHead>
+                            <TableHead>Email</TableHead>
                             <TableHead>Rol</TableHead>
                             <TableHead>Permisos</TableHead>
                             <TableHead className='text-right'>Acciones</TableHead>
@@ -242,9 +242,7 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
                 </CardHeader>
                 <CardContent>
                     <p className="text-sm text-muted-foreground">
-                       Este sistema de gestión de usuarios ahora guarda los cambios de forma permanente.
-                       Cualquier usuario que crees o elimines se reflejará en el archivo de configuración del servidor.
-                       Ten en cuenta que esta es una implementación simplificada para este entorno de prototipado.
+                       La gestión de usuarios ahora está conectada a Firebase. Sin embargo, la creación, edición y eliminación de usuarios desde la app está deshabilitada temporalmente mientras se completa la migración a Firestore. Los datos que ves son de solo lectura.
                     </p>
                 </CardContent>
             </Card>
@@ -258,7 +256,7 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
             <DialogHeader>
                 <DialogTitle>Añadir Nuevo Usuario</DialogTitle>
                 <DialogDescription>
-                    Completa los detalles para crear una nueva cuenta de usuario. Los cambios se guardarán permanentemente.
+                    Completa los detalles para crear una nueva cuenta de usuario. Esta función está deshabilitada.
                 </DialogDescription>
             </DialogHeader>
             <AddUserForm onSubmit={handleAddUser} isPending={isPending} />
@@ -270,7 +268,7 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
               <DialogHeader>
                   <DialogTitle>Editar Usuario</DialogTitle>
                   <DialogDescription>
-                      Modifica los detalles del usuario. La contraseña es opcional, solo se cambiará si introduces una nueva.
+                      Modifica los detalles del usuario. Esta función está deshabilitada.
                   </DialogDescription>
               </DialogHeader>
               {userToEdit && (
@@ -288,7 +286,7 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción eliminará permanentemente al usuario "{userToDelete?.name}". No podrás deshacer esta acción.
+              Esta acción es permanente y está deshabilitada.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
