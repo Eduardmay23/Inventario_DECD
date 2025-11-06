@@ -1,61 +1,80 @@
+
 'use client';
 
 import { useState, useTransition } from 'react';
-import { Bot, Loader2 } from 'lucide-react';
+import { Bot, Loader2, Package, AlertTriangle, ArrowRightLeft, Inbox } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { generateInventoryReport } from '@/ai/flows/generate-inventory-report';
+import { generateInventoryReport, type GenerateInventoryReportOutput } from '@/ai/flows/generate-inventory-report';
 import type { Loan, Product } from '@/lib/types';
+import { Badge } from '../ui/badge';
 
 interface ReportsClientProps {
   products: Product[];
   loans: Loan[];
 }
 
-// Improved Markdown to HTML parser
-const MarkdownViewer = ({ content }: { content: string }) => {
-  // Process the entire content as a single block
-  const formattedContent = content
-    .split('\n')
-    // Handle headings
-    .map(line => line.replace(/^##\s+(.*)/, '<h2 class="text-xl font-bold mt-6 mb-3 border-b pb-2">$1</h2>'))
-    .map(line => line.replace(/^###\s+(.*)/, '<h3 class="text-lg font-semibold mt-4 mb-2">$1</h3>'))
-    // Handle bullet points, converting them to paragraphs with a bullet symbol
-    .map(line => line.replace(/^\*\s+(.*)/, '<p class="pl-4">&bull; $1</p>'))
-    // Join lines that are part of the same paragraph, but keep headings and list items on their own lines
-    .reduce((acc, line) => {
-        if (line.startsWith('<h') || line.startsWith('<p class="pl-4">')) {
-            acc.push(line);
-        } else if (acc.length === 0 || acc[acc.length - 1].startsWith('<h')) {
-             acc.push(`<p>${line}</p>`);
-        } else {
-            // Append to the previous paragraph if it's not a heading or list item
-            const lastLine = acc.pop() || '';
-            if(lastLine.endsWith('</p>')){
-                 acc.push(lastLine.slice(0,-4) + ' ' + line + '</p>');
-            } else {
-                 acc.push(lastLine + ' ' + line);
-            }
-        }
-        return acc;
-    }, [] as string[])
-    .join('')
-    // Handle bold text within the final HTML
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+const ReportViewer = ({ report }: { report: GenerateInventoryReportOutput }) => {
+  const { generalSummary, stockAlerts, inStock, activeLoans } = report;
 
   return (
-    <div
-      className="prose prose-sm max-w-none text-foreground"
-      dangerouslySetInnerHTML={{ __html: formattedContent }}
-    />
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-xl font-bold mt-2 mb-3 border-b pb-2">Estado General del Inventario</h2>
+        <p className="text-muted-foreground">{generalSummary}</p>
+      </div>
+
+      <div>
+        <h2 className="text-xl font-bold mt-6 mb-3 border-b pb-2 flex items-center gap-2"><AlertTriangle className="text-destructive" />Alertas de Stock</h2>
+        <h3 className="text-lg font-semibold mt-4 mb-2">Nivel Crítico (Agotados)</h3>
+        {stockAlerts.critical.length > 0 ? (
+          <ul className="list-disc pl-5 space-y-1">
+            {stockAlerts.critical.map(item => (
+              <li key={item.name}><strong>{item.name}</strong>: <span className="font-bold text-destructive">{item.quantity} unidades</span></li>
+            ))}
+          </ul>
+        ) : <p className="text-sm text-muted-foreground pl-5">No hay productos agotados.</p>}
+        
+        <h3 className="text-lg font-semibold mt-4 mb-2">Nivel Bajo (Requiere Reorden)</h3>
+        {stockAlerts.low.length > 0 ? (
+           <ul className="list-disc pl-5 space-y-1">
+            {stockAlerts.low.map(item => (
+              <li key={item.name}><strong>{item.name}</strong>: <span className="font-bold text-amber-600">{item.quantity} unidades</span></li>
+            ))}
+          </ul>
+        ) : <p className="text-sm text-muted-foreground pl-5">No hay productos con stock bajo.</p>}
+      </div>
+
+      <div>
+        <h2 className="text-xl font-bold mt-6 mb-3 border-b pb-2 flex items-center gap-2"><Package />Productos en Existencia</h2>
+        {inStock.length > 0 ? (
+          <ul className="list-disc pl-5 space-y-1">
+            {inStock.map(item => (
+              <li key={item.name}><strong>{item.name}</strong>: {item.quantity} unidades</li>
+            ))}
+          </ul>
+        ) : <p className="text-sm text-muted-foreground pl-5">No hay productos con stock suficiente.</p>}
+      </div>
+
+       <div>
+        <h2 className="text-xl font-bold mt-6 mb-3 border-b pb-2 flex items-center gap-2"><ArrowRightLeft />Préstamos Activos</h2>
+         {activeLoans.length > 0 ? (
+          <ul className="list-disc pl-5 space-y-1">
+            {activeLoans.map(item => (
+              <li key={item.name}><strong>{item.name}</strong>: {item.quantity} unidad(es) a <Badge variant="secondary">{item.requester}</Badge></li>
+            ))}
+          </ul>
+        ) : <p className="text-sm text-muted-foreground pl-5">No hay préstamos activos en este momento.</p>}
+      </div>
+    </div>
   );
 };
 
 
 export default function ReportsClient({ products, loans }: ReportsClientProps) {
   const [isPending, startTransition] = useTransition();
-  const [report, setReport] = useState('');
+  const [report, setReport] = useState<GenerateInventoryReportOutput | null>(null);
   const { toast } = useToast();
 
   const handleGenerateReport = () => {
@@ -66,7 +85,7 @@ export default function ReportsClient({ products, loans }: ReportsClientProps) {
           productsData: JSON.stringify(products),
           loansData: JSON.stringify(activeLoans),
         });
-        setReport(result.report);
+        setReport(result);
       } catch (error) {
         console.error("No se pudo generar el reporte:", error);
         toast({
@@ -79,11 +98,11 @@ export default function ReportsClient({ products, loans }: ReportsClientProps) {
   };
 
   const handleCloseReport = () => {
-    setReport('');
+    setReport(null);
   };
 
   const handleRegenerateReport = () => {
-    setReport('');
+    setReport(null);
     handleGenerateReport();
   };
 
@@ -102,7 +121,7 @@ export default function ReportsClient({ products, loans }: ReportsClientProps) {
         {report ? (
           <div className="space-y-4">
             <div className="rounded-md border bg-muted/30 p-4 leading-relaxed">
-              <MarkdownViewer content={report} />
+              <ReportViewer report={report} />
             </div>
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" onClick={handleCloseReport}>
@@ -122,6 +141,9 @@ export default function ReportsClient({ products, loans }: ReportsClientProps) {
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center space-y-4 rounded-lg border-2 border-dashed bg-muted/50 p-8 text-center">
+             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+                <Inbox className="h-8 w-8 text-primary" />
+            </div>
             <p className="text-sm text-muted-foreground">
               Haz clic en el botón para que la IA analice todos los productos y préstamos, y genere un reporte ejecutivo.
             </p>

@@ -18,7 +18,13 @@ const GenerateInventoryReportInputSchema = z.object({
 export type GenerateInventoryReportInput = z.infer<typeof GenerateInventoryReportInputSchema>;
 
 const GenerateInventoryReportOutputSchema = z.object({
-  report: z.string().describe('Un resumen narrativo y profesional en español del estado del inventario. Debe seguir una estructura de encabezados e identificar claramente los productos críticos y en préstamo.'),
+  generalSummary: z.string().describe('Un breve resumen ejecutivo (2-3 frases) del estado general del inventario.'),
+  stockAlerts: z.object({
+    critical: z.array(z.object({ name: z.string(), quantity: z.number() })).describe('Lista de productos con cantidad CERO (agotados).'),
+    low: z.array(z.object({ name: z.string(), quantity: z.number() })).describe('Lista de productos cuya cantidad es mayor que cero pero menor o igual a su punto de reorden.'),
+  }),
+  inStock: z.array(z.object({ name: z.string(), quantity: z.number() })).describe('Lista de productos con buena cantidad de stock (cantidad mayor al punto de reorden).'),
+  activeLoans: z.array(z.object({ name: z.string(), quantity: z.number(), requester: z.string() })).describe('Lista de productos que están actualmente en préstamo.'),
 });
 export type GenerateInventoryReportOutput = z.infer<typeof GenerateInventoryReportOutputSchema>;
 
@@ -30,34 +36,21 @@ const prompt = ai.definePrompt({
   name: 'generateInventoryReportPrompt',
   input: { schema: GenerateInventoryReportInputSchema },
   output: { schema: GenerateInventoryReportOutputSchema },
-  prompt: `Actúa como un analista de inventario experto para un sistema de gestión de un ayuntamiento. Tu tarea es generar un reporte ejecutivo profesional y bien estructurado en español, basado en los datos de productos y préstamos proporcionados.
+  prompt: `Actúa como un analista de inventario experto para un sistema de gestión de un ayuntamiento. Tu tarea es analizar los datos de productos y préstamos proporcionados y estructurarlos en el formato JSON de salida requerido.
 
-**IMPORTANTE: El formato de salida es CRÍTICO. Debes seguir exactamente el siguiente formato Markdown, usando '##' para los títulos principales, '###' para subtítulos, y '**' para texto en negrita.**
+Analiza los siguientes datos y rellena los campos del schema de salida:
 
-### EJEMPLO DE FORMATO:
-## ESTADO GENERAL DEL INVENTARIO
-Texto del resumen general.
+- **generalSummary**: Escribe un resumen profesional de 2 o 3 frases sobre el estado general.
+- **stockAlerts.critical**: Identifica los productos con cantidad CERO.
+- **stockAlerts.low**: Identifica productos donde la cantidad es > 0 pero <= reorderPoint.
+- **inStock**: Lista los productos donde la cantidad es > reorderPoint.
+- **activeLoans**: Lista los productos de los préstamos activos.
 
-## ALERTAS DE STOCK
-### Nivel Crítico (Agotados)
-* **Nombre del Producto**: Cantidad actual
-### Nivel Bajo (Requiere Reorden)
-* **Nombre del Producto**: Cantidad actual
-
-## PRODUCTOS EN EXISTENCIA
-* **Nombre del Producto**: Cantidad actual
-
-## PRÉSTAMOS ACTIVOS
-* **Nombre del Producto**: Cantidad Prestada, Solicitante: **Nombre del Solicitante**
-
----
-
-Ahora, usa los siguientes datos para generar el reporte real, siguiendo estrictamente el formato del ejemplo anterior. No inventes información y no incluyas una sección de recomendaciones.
+No inventes información. Si una categoría no tiene productos (ej. no hay productos en nivel crítico), devuelve un array vacío para esa categoría.
 
 Datos de Productos: {{{productsData}}}
 Datos de Préstamos Activos: {{{loansData}}}
-
-Genera el reporte.`,
+`,
 });
 
 const generateInventoryReportFlow = ai.defineFlow(
@@ -69,10 +62,11 @@ const generateInventoryReportFlow = ai.defineFlow(
   async input => {
     const { output } = await prompt(input);
     
-    if (!output || !output.report) {
+    if (!output) {
       throw new Error('La IA no pudo generar un reporte válido.');
     }
     
     return output;
   }
 );
+
