@@ -45,7 +45,7 @@ import type { User } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 import { useFirestore, useAuth, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
 import { FirebaseError } from 'firebase/app';
 
 type SettingsClientProps = {
@@ -70,20 +70,23 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
   const handleAddUser = (newUser: Omit<User, 'id' | 'role' | 'uid'>) => {
     startTransition(async () => {
       try {
+        if (!auth || !firestore) {
+            throw new Error("Firebase services not available");
+        }
+
         const email = `${newUser.username}@${DUMMY_DOMAIN}`;
-        
         const { user: newAuthUser } = await createUserWithEmailAndPassword(auth, email, newUser.password!);
         
         const userDocData = {
           uid: newAuthUser.uid,
           name: newUser.name,
           username: newUser.username,
-          role: 'user',
+          role: 'user' as const,
           permissions: newUser.permissions,
         };
 
         const userDocRef = doc(firestore, "users", newAuthUser.uid);
-        await setDoc(userDocRef, userDocData);
+        setDocumentNonBlocking(userDocRef, userDocData, {});
 
         toast({
           title: "Usuario Creado",
@@ -112,26 +115,32 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
   };
 
   const openEditDialog = (user: User) => {
-    if (user.role === 'admin') {
-        toast({
-            variant: "destructive",
-            title: "Acción no permitida",
-            description: "No se puede editar al usuario administrador principal.",
-        });
-        return;
-    }
     setUserToEdit(user);
     setIsEditUserOpen(true);
   };
 
   const handleUpdateUser = (userId: string, data: Partial<Omit<User, 'id' | 'role' | 'uid'>>) => {
+     if (!firestore) return;
     startTransition(() => {
         const userDocRef = doc(firestore, "users", userId);
-        setDocumentNonBlocking(userDocRef, { permissions: data.permissions }, { merge: true });
+        
+        const dataToUpdate: Partial<User> = {};
+        if (data.name) dataToUpdate.name = data.name;
+        // Solo actualiza permisos si no es admin
+        if (userToEdit?.role !== 'admin' && data.permissions) {
+            dataToUpdate.permissions = data.permissions;
+        }
+
+        if(Object.keys(dataToUpdate).length === 0) {
+            setIsEditUserOpen(false);
+            return;
+        }
+
+        setDocumentNonBlocking(userDocRef, dataToUpdate, { merge: true });
         
         toast({
             title: "Usuario Actualizado",
-            description: `Los permisos del usuario han sido actualizados.`,
+            description: `Los datos del usuario han sido actualizados.`,
         });
         setIsEditUserOpen(false);
         router.refresh();
@@ -153,7 +162,7 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
   };
 
   const confirmDelete = () => {
-    if (userToDelete) {
+    if (userToDelete && firestore) {
       startTransition(() => {
           const userDocRef = doc(firestore, "users", userToDelete.id);
           deleteDocumentNonBlocking(userDocRef);
@@ -242,7 +251,7 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
                                     variant="ghost" 
                                     size="icon" 
                                     onClick={() => openEditDialog(user)}
-                                    disabled={user.role === 'admin' || isPending}
+                                    disabled={isPending}
                                     aria-label="Editar usuario"
                                   >
                                     <Edit className="h-4 w-4" />
@@ -302,7 +311,7 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
               <DialogHeader>
                   <DialogTitle>Editar Usuario</DialogTitle>
                   <DialogDescription>
-                      Modifica los permisos de acceso del usuario.
+                      Modifica los detalles del usuario.
                   </DialogDescription>
               </DialogHeader>
               {userToEdit && (

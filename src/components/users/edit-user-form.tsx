@@ -43,6 +43,8 @@ type EditUserFormProps = {
 };
 
 export function EditUserForm({ user, onSubmit, isPending }: EditUserFormProps) {
+  const isAdmin = user.role === 'admin';
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -64,28 +66,23 @@ export function EditUserForm({ user, onSubmit, isPending }: EditUserFormProps) {
 
 
   function handleFormSubmit(values: z.infer<typeof formSchema>) {
-    // Creamos un objeto para enviar solo los datos modificados.
     const dataToSubmit: Partial<z.infer<typeof formSchema>> = {};
 
-    // Comparamos cada campo con los valores originales del usuario
     if (values.name !== user.name) {
       dataToSubmit.name = values.name;
     }
-    if (values.username !== user.username) {
+    if (!isAdmin && values.username !== user.username) {
       dataToSubmit.username = values.username;
     }
-    // Solo incluimos la contraseña si se escribió una nueva
     if (values.password && values.password.length > 0) {
       dataToSubmit.password = values.password;
     }
-    // Comparamos los arrays de permisos
-    if (JSON.stringify(values.permissions.sort()) !== JSON.stringify(user.permissions.sort())) {
+    
+    if (!isAdmin && JSON.stringify(values.permissions.sort()) !== JSON.stringify(user.permissions.sort())) {
        dataToSubmit.permissions = values.permissions;
     }
     
-    // Si no hay cambios, no hacemos nada (o podríamos mostrar un mensaje)
     if (Object.keys(dataToSubmit).length === 0) {
-        form.reset(); // Opcional: cerrar el diálogo si no hay cambios.
         return;
     }
     
@@ -115,8 +112,9 @@ export function EditUserForm({ user, onSubmit, isPending }: EditUserFormProps) {
             <FormItem>
               <FormLabel>Nombre de Usuario</FormLabel>
               <FormControl>
-                <Input placeholder="Ej: juan.perez" {...field} />
+                <Input placeholder="Ej: juan.perez" {...field} disabled={isAdmin} />
               </FormControl>
+              {isAdmin && <FormDescription>El nombre de usuario del administrador no se puede cambiar.</FormDescription>}
               <FormMessage />
             </FormItem>
           )}
@@ -169,6 +167,7 @@ export function EditUserForm({ user, onSubmit, isPending }: EditUserFormProps) {
                                     )
                                   );
                             }}
+                            disabled={isAdmin}
                           />
                         </FormControl>
                         <FormLabel className="font-normal">
@@ -179,6 +178,7 @@ export function EditUserForm({ user, onSubmit, isPending }: EditUserFormProps) {
                   }}
                 />
               ))}
+               {isAdmin && <FormDescription className="mt-2">El administrador siempre tiene todos los permisos.</FormDescription>}
               <FormMessage />
             </FormItem>
           )}
