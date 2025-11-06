@@ -2,21 +2,22 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { Bot, Loader2, Package, AlertTriangle, ArrowRightLeft, FileText, Printer } from 'lucide-react';
+import { Bot, Loader2, Package, AlertTriangle, ArrowRightLeft, FileText, Printer, MinusSquare } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { generateInventoryReport, type GenerateInventoryReportOutput } from '@/ai/flows/generate-inventory-report';
-import type { Loan, Product } from '@/lib/types';
+import type { Loan, Product, StockMovement } from '@/lib/types';
 import { Badge } from '../ui/badge';
 
 interface ReportsClientProps {
   products: Product[];
   loans: Loan[];
+  movements: StockMovement[];
 }
 
 const ReportViewer = ({ report }: { report: GenerateInventoryReportOutput }) => {
-  const { generalSummary, stockAlerts, inStock, activeLoans } = report;
+  const { generalSummary, stockAlerts, inStock, activeLoans, recentMovementsSummary } = report;
 
   return (
     <div className="space-y-6">
@@ -45,6 +46,13 @@ const ReportViewer = ({ report }: { report: GenerateInventoryReportOutput }) => 
           </ul>
         ) : <p className="text-sm text-muted-foreground pl-5">No hay productos con stock bajo.</p>}
       </div>
+      
+      {recentMovementsSummary && (
+        <div>
+            <h2 className="text-xl font-bold mt-6 mb-3 border-b pb-2 flex items-center gap-2"><MinusSquare />Movimientos y Ajustes Recientes</h2>
+            <p className="text-muted-foreground">{recentMovementsSummary}</p>
+        </div>
+      )}
 
       <div>
         <h2 className="text-xl font-bold mt-6 mb-3 border-b pb-2 flex items-center gap-2"><Package />Productos en Existencia</h2>
@@ -72,7 +80,7 @@ const ReportViewer = ({ report }: { report: GenerateInventoryReportOutput }) => 
 };
 
 
-export default function ReportsClient({ products, loans }: ReportsClientProps) {
+export default function ReportsClient({ products, loans, movements }: ReportsClientProps) {
   const [isPending, startTransition] = useTransition();
   const [report, setReport] = useState<GenerateInventoryReportOutput | null>(null);
   const { toast } = useToast();
@@ -84,6 +92,7 @@ export default function ReportsClient({ products, loans }: ReportsClientProps) {
         const result = await generateInventoryReport({
           productsData: JSON.stringify(products),
           loansData: JSON.stringify(activeLoans),
+          movementsData: JSON.stringify(movements),
         });
         setReport(result);
       } catch (error) {

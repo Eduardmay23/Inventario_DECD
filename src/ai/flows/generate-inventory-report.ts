@@ -14,6 +14,7 @@ import { z } from 'genkit';
 const GenerateInventoryReportInputSchema = z.object({
   productsData: z.string().describe('Cadena JSON con todos los datos de los productos, incluyendo nombre, cantidad, punto de reorden, etc.'),
   loansData: z.string().describe('Cadena JSON con los datos de los préstamos que están actualmente activos (estado "Prestado").'),
+  movementsData: z.string().describe('Cadena JSON con los datos de los movimientos o ajustes de stock más recientes.'),
 });
 export type GenerateInventoryReportInput = z.infer<typeof GenerateInventoryReportInputSchema>;
 
@@ -25,6 +26,7 @@ const GenerateInventoryReportOutputSchema = z.object({
   }),
   inStock: z.array(z.object({ name: z.string(), quantity: z.number() })).describe('Lista de productos con buena cantidad de stock (cantidad mayor al punto de reorden).'),
   activeLoans: z.array(z.object({ name: z.string(), quantity: z.number(), requester: z.string() })).describe('Lista de productos que están actualmente en préstamo.'),
+  recentMovementsSummary: z.string().describe('Un breve resumen (1-2 frases) de los movimientos y ajustes de stock más significativos o recientes.'),
 });
 export type GenerateInventoryReportOutput = z.infer<typeof GenerateInventoryReportOutputSchema>;
 
@@ -36,7 +38,7 @@ const prompt = ai.definePrompt({
   name: 'generateInventoryReportPrompt',
   input: { schema: GenerateInventoryReportInputSchema },
   output: { schema: GenerateInventoryReportOutputSchema },
-  prompt: `Actúa como un analista de inventario experto para un sistema de gestión de un ayuntamiento. Tu tarea es analizar los datos de productos y préstamos proporcionados y estructurarlos en el formato JSON de salida requerido.
+  prompt: `Actúa como un analista de inventario experto para un sistema de gestión de un ayuntamiento. Tu tarea es analizar los datos de productos, préstamos y movimientos proporcionados y estructurarlos en el formato JSON de salida requerido.
 
 Analiza los siguientes datos y rellena los campos del schema de salida:
 
@@ -45,11 +47,13 @@ Analiza los siguientes datos y rellena los campos del schema de salida:
 - **stockAlerts.low**: Identifica productos donde la cantidad es > 0 pero <= reorderPoint.
 - **inStock**: Lista los productos donde la cantidad es > reorderPoint.
 - **activeLoans**: Lista los productos de los préstamos activos.
+- **recentMovementsSummary**: Analiza los movimientos de stock recientes y escribe un resumen de 1 a 2 frases destacando los descuentos más relevantes o curiosos.
 
-No inventes información. Si una categoría no tiene productos (ej. no hay productos en nivel crítico), devuelve un array vacío para esa categoría.
+No inventes información. Si una categoría no tiene productos (ej. no hay productos en nivel crítico), devuelve un array vacío o una cadena vacía.
 
 Datos de Productos: {{{productsData}}}
 Datos de Préstamos Activos: {{{loansData}}}
+Datos de Movimientos Recientes: {{{movementsData}}}
 `,
 });
 

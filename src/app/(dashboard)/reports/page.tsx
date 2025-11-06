@@ -3,7 +3,7 @@
 
 import ReportsClient from '@/components/reports/reports-client';
 import AppHeader from '@/components/header';
-import type { Product, Loan } from '@/lib/types';
+import type { Product, Loan, StockMovement } from '@/lib/types';
 import { promises as fs } from 'fs';
 import path from 'path';
 
@@ -38,10 +38,26 @@ async function getLoans(): Promise<Loan[]> {
   }
 }
 
+async function getMovements(): Promise<StockMovement[]> {
+  const filePath = path.join(process.cwd(), 'src', 'lib', 'movements.json');
+  try {
+    const data = await fs.readFile(filePath, 'utf-8');
+    const jsonData = JSON.parse(data);
+    return jsonData.movements || [];
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      return [];
+    }
+    console.error('Error reading or parsing movements.json:', error);
+    return [];
+  }
+}
+
 
 export default async function ReportsPage() {
   const products = await getProducts();
   const loans = await getLoans();
+  const movements = await getMovements();
 
   return (
     <div className="flex flex-1 flex-col">
@@ -50,6 +66,7 @@ export default async function ReportsPage() {
         <ReportsClient
           products={products}
           loans={loans}
+          movements={movements}
         />
       </main>
     </div>
