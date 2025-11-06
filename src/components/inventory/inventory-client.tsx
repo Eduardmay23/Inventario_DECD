@@ -220,8 +220,8 @@ export default function InventoryClient({ data }: { data: Product[] }) {
                         </TableRow>
                         </TableHeader>
                         <TableBody>
-                        {filteredData.length > 0 ? filteredData.map((product, index) => (
-                            <TableRow key={product.id || index}>
+                        {filteredData.length > 0 ? filteredData.map((product) => (
+                            <TableRow key={product.id}>
                             <TableCell className="font-medium">{product.name}</TableCell>
                             <TableCell className="hidden md:table-cell">{product.sku}</TableCell>
                             <TableCell className="hidden lg:table-cell">{product.category}</TableCell>
