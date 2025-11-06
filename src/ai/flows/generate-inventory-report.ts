@@ -18,7 +18,7 @@ const GenerateInventoryReportInputSchema = z.object({
 export type GenerateInventoryReportInput = z.infer<typeof GenerateInventoryReportInputSchema>;
 
 const GenerateInventoryReportOutputSchema = z.object({
-  report: z.string().describe('Un resumen narrativo y profesional en español del estado del inventario. Debe seguir una estructura de encabezados, identificar claramente los productos críticos y en préstamo, y finalizar con recomendaciones.'),
+  report: z.string().describe('Un resumen narrativo y profesional en español del estado del inventario. Debe seguir una estructura de encabezados e identificar claramente los productos críticos y en préstamo.'),
 });
 export type GenerateInventoryReportOutput = z.infer<typeof GenerateInventoryReportOutputSchema>;
 
@@ -47,12 +47,9 @@ Texto del resumen general.
 ## PRÉSTAMOS ACTIVOS
 * **Nombre del Producto**: Cantidad Prestada, Solicitante: **Nombre del Solicitante**
 
-## RECOMENDACIONES
-Texto de las recomendaciones.
-
 ---
 
-Ahora, usa los siguientes datos para generar el reporte real, siguiendo estrictamente el formato del ejemplo anterior. No inventes información.
+Ahora, usa los siguientes datos para generar el reporte real, siguiendo estrictamente el formato del ejemplo anterior. No inventes información y no incluyas una sección de recomendaciones.
 
 Datos de Productos: {{{productsData}}}
 Datos de Préstamos Activos: {{{loansData}}}
