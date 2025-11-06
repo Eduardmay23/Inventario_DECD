@@ -177,6 +177,16 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
     settings: 'Configuración'
   };
 
+  const sortedUsers = [...initialUsers].sort((a, b) => {
+    if (a.role === 'admin' && b.role !== 'admin') {
+      return -1; // admin comes first
+    }
+    if (a.role !== 'admin' && b.role === 'admin') {
+      return 1; // admin comes second
+    }
+    return a.name.localeCompare(b.name); // sort other users by name
+  });
+
   return (
     <>
       <div className="flex flex-1 flex-col">
@@ -207,7 +217,7 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {initialUsers.map(user => (
+                        {sortedUsers.map(user => (
                             <TableRow key={user.id}>
                                 <TableCell className="font-medium">{user.name}</TableCell>
                                 <TableCell>{user.username}</TableCell>
@@ -323,5 +333,3 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
     </>
   );
 }
-
-    
