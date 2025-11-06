@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, type FormEvent } from 'react';
@@ -16,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useAuth } from '@/firebase';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { FirebaseError } from 'firebase/app';
 
 export default function LoginPage() {
@@ -38,23 +37,33 @@ export default function LoginPage() {
       await signInWithEmailAndPassword(auth, email, password);
       router.replace('/dashboard');
     } catch (e) {
-      let errorMessage = 'Ocurrió un error inesperado. Inténtalo de nuevo.';
-      if (e instanceof FirebaseError) {
-        switch (e.code) {
-          case 'auth/user-not-found':
-          case 'auth/wrong-password':
-          case 'auth/invalid-credential':
-            errorMessage = 'Correo electrónico o contraseña incorrectos.';
-            break;
-          case 'auth/invalid-email':
-            errorMessage = 'El formato del correo electrónico no es válido.';
-            break;
-          default:
-            errorMessage = 'Error de autenticación. Por favor, revisa tus credenciales.';
-            break;
+      if (e instanceof FirebaseError && (e.code === 'auth/user-not-found' || e.code === 'auth/invalid-credential')) {
+        // User doesn't exist, let's create them
+        try {
+          await createUserWithEmailAndPassword(auth, email, password);
+          // The onAuthStateChanged listener in the layout will handle the redirect
+          // but we'll redirect manually just in case.
+          router.replace('/dashboard');
+        } catch (creationError) {
+          setError('No se pudo crear la cuenta de administrador. Inténtalo de nuevo.');
         }
+      } else {
+        let errorMessage = 'Ocurrió un error inesperado. Inténtalo de nuevo.';
+        if (e instanceof FirebaseError) {
+          switch (e.code) {
+            case 'auth/wrong-password':
+              errorMessage = 'Correo electrónico o contraseña incorrectos.';
+              break;
+            case 'auth/invalid-email':
+              errorMessage = 'El formato del correo electrónico no es válido.';
+              break;
+            default:
+              errorMessage = 'Error de autenticación. Por favor, revisa tus credenciales.';
+              break;
+          }
+        }
+        setError(errorMessage);
       }
-      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -108,13 +117,13 @@ export default function LoginPage() {
               </div>
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isLoading ? 'Iniciando sesión...' : 'Entrar'}
+                {isLoading ? 'Accediendo...' : 'Entrar'}
               </Button>
             </form>
           </CardContent>
         </Card>
         <p className="px-8 text-center text-sm text-muted-foreground">
-          Usuario por defecto: <span className="font-mono">admin@example.com</span>, Contraseña: <span className="font-mono">password123</span>
+          Usa cualquier correo y contraseña. Si no existen, se creará una cuenta nueva.
         </p>
       </div>
     </main>
