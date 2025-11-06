@@ -32,27 +32,27 @@ const prompt = ai.definePrompt({
   output: { schema: GenerateInventoryReportOutputSchema },
   prompt: `Actúa como un analista de inventario experto para un sistema de gestión de un ayuntamiento. Tu tarea es generar un reporte ejecutivo profesional y bien estructurado en español, basado en los datos de productos y préstamos proporcionados.
 
-El tono debe ser formal y directo, orientado a la toma de decisiones. Estructura el reporte utilizando los siguientes apartados con encabezados claros:
+**IMPORTANTE: El formato de salida es CRÍTICO. Debes seguir exactamente el siguiente formato Markdown, usando '##' para los títulos principales, '###' para subtítulos, y '**' para texto en negrita.**
 
-1.  **ESTADO GENERAL DEL INVENTARIO**:
-    *   Comienza con un breve resumen del estado actual.
+### EJEMPLO DE FORMATO:
+## ESTADO GENERAL DEL INVENTARIO
+Texto del resumen general.
 
-2.  **ALERTAS DE STOCK**:
-    *   Identifica los productos que requieren atención inmediata.
-    *   Crea una subsección "Nivel Crítico (Agotados)" para productos con cantidad 0.
-    *   Crea una subsección "Nivel Bajo (Requiere Reorden)" para productos con cantidad menor or igual a su punto de reorden.
-    *   Para cada producto, lista su nombre y la cantidad actual.
-    *   Si no hay alertas, indícalo claramente.
+## ALERTAS DE STOCK
+### Nivel Crítico (Agotados)
+* **Nombre del Producto**: Cantidad actual
+### Nivel Bajo (Requiere Reorden)
+* **Nombre del Producto**: Cantidad actual
 
-3.  **PRÉSTAMOS ACTIVOS**:
-    *   Lista todos los productos que se encuentran actualmente con el estado "Prestado".
-    *   Para cada uno, especifica: Nombre del Producto, Cantidad Prestada y Solicitante.
-    *   Si no hay préstamos activos, menciónalo explícitamente.
+## PRÉSTAMOS ACTIVOS
+* **Nombre del Producto**: Cantidad Prestada, Solicitante: **Nombre del Solicitante**
 
-4.  **RECOMENDACIONES**:
-    *   Basado en el análisis, proporciona un breve punto de acción, como "Se recomienda contactar a proveedores para reabastecer los productos en estado crítico y bajo" o "Realizar seguimiento de los préstamos activos".
+## RECOMENDACIONES
+Texto de las recomendaciones.
 
-No inventes información. Basa tu reporte únicamente en los datos proporcionados.
+---
+
+Ahora, usa los siguientes datos para generar el reporte real, siguiendo estrictamente el formato del ejemplo anterior. No inventes información.
 
 Datos de Productos: {{{productsData}}}
 Datos de Préstamos Activos: {{{loansData}}}
