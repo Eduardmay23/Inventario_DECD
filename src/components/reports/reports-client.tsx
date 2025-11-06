@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { Bot, Loader2, Package, AlertTriangle, ArrowRightLeft, Inbox, Printer } from 'lucide-react';
+import { Bot, Loader2, Package, AlertTriangle, ArrowRightLeft, FileText, Printer } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -150,7 +150,7 @@ export default function ReportsClient({ products, loans }: ReportsClientProps) {
         ) : (
           <div className="flex flex-col items-center justify-center space-y-4 rounded-lg border-2 border-dashed bg-muted/50 p-8 text-center print-hide">
              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-                <Inbox className="h-8 w-8 text-primary" />
+                <FileText className="h-8 w-8 text-primary" />
             </div>
             <p className="text-sm text-muted-foreground">
               Haz clic en el botón para que la IA analice todos los productos y préstamos, y genere un reporte ejecutivo.
