@@ -1,15 +1,11 @@
 "use client";
 
-import { useState, useTransition } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis } from "recharts";
-import { AlertTriangle, Bot, Loader2, Package, Warehouse } from "lucide-react";
+import { AlertTriangle, Package, Warehouse } from "lucide-react";
 
-import type { Loan, Product, StockLog } from "@/lib/types";
+import type { Loan, Product } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
-import { generateStockLevelSummary } from "@/ai/flows/generate-stock-level-summary";
 import {
   ChartContainer,
   ChartTooltip,
@@ -33,34 +29,12 @@ export default function DashboardClient({
   inventoryData,
   recentChanges,
 }: DashboardClientProps) {
-  const [isPending, startTransition] = useTransition();
-  const [summary, setSummary] = useState("");
-  const { toast } = useToast();
 
   const totalProducts = inventoryData.length;
   const totalStock = inventoryData.reduce((sum, p) => sum + p.quantity, 0);
   const lowStockItems = inventoryData.filter(
     (p) => p.quantity <= p.reorderPoint
   );
-
-  const handleGenerateSummary = () => {
-    startTransition(async () => {
-      try {
-        const result = await generateStockLevelSummary({
-          inventoryData: JSON.stringify(inventoryData),
-          recentChangesLog: JSON.stringify(recentChanges),
-        });
-        setSummary(result.summary);
-      } catch (error) {
-        console.error("No se pudo generar el resumen:", error);
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "No se pudo generar el resumen de IA. Por favor, inténtalo de nuevo.",
-        });
-      }
-    });
-  };
 
   const chartData = inventoryData.map(p => ({ name: p.name, quantity: p.quantity }));
 
@@ -97,42 +71,6 @@ export default function DashboardClient({
         </CardContent>
       </Card>
       
-      <Card className="lg:col-span-3">
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Bot className="h-6 w-6 text-primary" />
-            <CardTitle>Resumen con IA</CardTitle>
-          </div>
-          <CardDescription>
-            Obtén un análisis automatizado del estado de tu inventario y actividades recientes.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {summary ? (
-            <div className="space-y-4">
-              <p className="text-sm leading-relaxed">{summary}</p>
-              <Button variant="outline" size="sm" onClick={() => setSummary("")}>
-                Generar Nuevo Resumen
-              </Button>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center space-y-4 rounded-lg border-2 border-dashed bg-muted/50 p-8 text-center">
-              <p className="text-sm text-muted-foreground">Haz clic en el botón para generar un análisis de inventario usando IA.</p>
-              <Button onClick={handleGenerateSummary} disabled={isPending}>
-                {isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Generando...
-                  </>
-                ) : (
-                  "Generar Resumen"
-                )}
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
       <Card className="lg:col-span-2">
         <CardHeader>
           <CardTitle>Niveles de Inventario</CardTitle>
