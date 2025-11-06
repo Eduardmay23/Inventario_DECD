@@ -28,9 +28,9 @@ export type Loan = {
 };
 
 export type User = {
-    id: string;
-    username: string;
-    password?: string;
+    id: string; // This will be the Firebase Auth UID
+    username: string; // This will be the email
+    password?: string; // Only used for creation, not stored in Firestore
     name: string;
     role: 'admin' | 'user';
     permissions: string[];

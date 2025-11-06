@@ -28,7 +28,7 @@ const permissions = [
 
 const formSchema = z.object({
   name: z.string().min(2, "El nombre debe tener al menos 2 caracteres."),
-  username: z.string().min(3, "El nombre de usuario debe tener al menos 3 caracteres."),
+  username: z.string().email("Debe ser un correo electrónico válido."),
   password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres."),
   permissions: z.array(z.string()).refine(value => value.some(item => item), {
     message: "Debes seleccionar al menos un permiso.",
@@ -81,9 +81,9 @@ export function AddUserForm({ onSubmit, isPending }: AddUserFormProps) {
           name="username"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Nombre de Usuario</FormLabel>
+              <FormLabel>Correo Electrónico (será su login)</FormLabel>
               <FormControl>
-                <Input placeholder="Ej: juan.perez" {...field} />
+                <Input type="email" placeholder="Ej: juan.perez@example.com" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

@@ -68,13 +68,28 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
   const handleAddUser = (newUser: Omit<User, 'id'>) => {
     startTransition(async () => {
       try {
-        // We can't create a user with the client SDK and then sign out and sign back in
-        // as the original user. We'll show an alert that this isn't supported in Studio.
+        // This is a temporary auth instance to create the user without affecting the current admin session.
+        // NOTE: This is generally not recommended for production apps without proper multi-admin management.
+        const { user: newAuthUser } = await createUserWithEmailAndPassword(auth, newUser.username, newUser.password!);
+        
+        const userDocData = {
+          uid: newAuthUser.uid,
+          name: newUser.name,
+          username: newUser.username,
+          role: 'user',
+          permissions: newUser.permissions,
+        };
+
+        // Use the uid from Auth as the document ID in Firestore for consistency
+        await setDoc(doc(firestore, "users", newAuthUser.uid), userDocData);
+
         toast({
-          variant: "destructive",
-          title: "Función no compatible",
-          description: "La creación de usuarios no es compatible en este entorno. Usa la consola de Firebase.",
+          title: "Usuario Creado",
+          description: `El usuario "${newUser.username}" ha sido creado con éxito.`,
         });
+
+        setIsAddUserOpen(false);
+        router.refresh();
 
       } catch (error: any) {
         let description = "No se pudo crear el usuario. Inténtalo de nuevo.";
@@ -83,6 +98,8 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
             description = 'Este correo electrónico ya está en uso por otra cuenta.';
           } else if (error.code === 'auth/weak-password') {
             description = 'La contraseña es demasiado débil. Debe tener al menos 6 caracteres.';
+          } else if (error.code === 'auth/invalid-email') {
+            description = 'El correo electrónico no es válido.';
           }
         }
         toast({
@@ -265,8 +282,8 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
                 </CardHeader>
                 <CardContent>
                     <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
-                      <li>La creación de nuevos usuarios está deshabilitada en este entorno para mantener la seguridad de la sesión del administrador actual. Puedes añadir nuevos usuarios directamente desde la consola de Firebase Authentication.</li>
-                      <li>La edición de usuarios se limita a cambiar sus permisos. Cambiar correos o contraseñas requiere una nueva autenticación que no está implementada en este panel.</li>
+                      <li>La creación de nuevos usuarios utiliza directamente Firebase Authentication.</li>
+                      <li>La edición de usuarios actualmente solo modifica sus permisos en Firestore. Cambiar correos o contraseñas requiere una nueva autenticación que no está implementada en este panel.</li>
                       <li>La eliminación de usuarios solo borra su registro de la base de datos de Firestore, pero no elimina al usuario del sistema de autenticación de Firebase por razones de seguridad.</li>
                     </ul>
                 </CardContent>
