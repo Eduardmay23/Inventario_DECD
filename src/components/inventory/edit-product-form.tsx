@@ -19,12 +19,10 @@ import {
 import { Input } from "@/components/ui/input";
 import type { Product } from "@/lib/types";
 
+// The ID is not part of the edit form schema, it's not editable.
 const formSchema = z.object({
   name: z.string().min(2, {
     message: "El nombre debe tener al menos 2 caracteres.",
-  }),
-  sku: z.string().min(2, {
-    message: "El SKU debe tener al menos 2 caracteres.",
   }),
   category: z.string().min(2, {
     message: "La categoría debe tener al menos 2 caracteres.",
@@ -49,9 +47,14 @@ type EditProductFormProps = {
 export function EditProductForm({ onSubmit, product, isPending }: EditProductFormProps) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: product || {
+    defaultValues: product ? {
+        name: product.name,
+        category: product.category,
+        location: product.location,
+        quantity: product.quantity,
+        reorderPoint: product.reorderPoint
+    } : {
       name: "",
-      sku: "",
       category: "",
       location: "",
       quantity: 0,
@@ -72,6 +75,12 @@ export function EditProductForm({ onSubmit, product, isPending }: EditProductFor
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
+        <FormItem>
+            <FormLabel>ID del Producto</FormLabel>
+            <FormControl>
+                <Input value={product?.id || ''} disabled />
+            </FormControl>
+        </FormItem>
         <FormField
           control={form.control}
           name="name"
@@ -79,20 +88,7 @@ export function EditProductForm({ onSubmit, product, isPending }: EditProductFor
             <FormItem>
               <FormLabel>Nombre del Producto</FormLabel>
               <FormControl>
-                <Input placeholder="Ej: Blue Widgets" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="sku"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>SKU</FormLabel>
-              <FormControl>
-                <Input placeholder="Ej: BW-001" {...field} />
+                <Input placeholder="Ej: Lámpara de Techo" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -105,7 +101,7 @@ export function EditProductForm({ onSubmit, product, isPending }: EditProductFor
             <FormItem>
               <FormLabel>Categoría</FormLabel>
               <FormControl>
-                <Input placeholder="Ej: Widgets" {...field} />
+                <Input placeholder="Ej: Iluminación" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

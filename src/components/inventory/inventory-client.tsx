@@ -101,7 +101,7 @@ export default function InventoryClient({ data }: { data: Product[] }) {
     }
   };
   
-  const handleAddProduct = (newProductData: Omit<Product, 'id'>) => {
+  const handleAddProduct = (newProductData: Product) => {
     startTransition(async () => {
       const result = await saveProduct(newProductData);
       if (result.success) {
@@ -121,14 +121,14 @@ export default function InventoryClient({ data }: { data: Product[] }) {
     });
   };
 
-  const handleEditProduct = (editedProductData: Omit<Product, 'id'>) => {
+  const handleEditProduct = (editedProductData: Partial<Omit<Product, 'id'>>) => {
     if (productToEdit) {
       startTransition(async () => {
         const result = await updateProduct(productToEdit.id, editedProductData);
-        if (result.success) {
+        if (result.success && result.data) {
           toast({
             title: "Producto Actualizado",
-            description: `El producto "${editedProductData.name}" ha sido actualizado.`,
+            description: `El producto "${result.data.name}" ha sido actualizado.`,
           });
           setIsEditDialogOpen(false);
           setProductToEdit(null);
@@ -175,19 +175,19 @@ export default function InventoryClient({ data }: { data: Product[] }) {
     }
     return data.filter((product) => {
       const nameMatch = product.name?.toLowerCase().includes(lowercasedQuery) ?? false;
-      const skuMatch = product.sku?.toLowerCase().includes(lowercasedQuery) ?? false;
+      const idMatch = product.id?.toLowerCase().includes(lowercasedQuery) ?? false;
       const categoryMatch = product.category?.toLowerCase().includes(lowercasedQuery) ?? false;
-      return nameMatch || skuMatch || categoryMatch;
+      return nameMatch || idMatch || categoryMatch;
     });
   }, [data, searchQuery]);
 
 
   const handleDownloadCsv = () => {
-    const headers = ["ID", "Nombre", "SKU", "Categoría", "Cantidad", "Ubicación", "PuntoDeReorden"];
+    const headers = ["ID", "Nombre", "Categoría", "Cantidad", "Ubicación", "PuntoDeReorden"];
     const csvRows = [
       headers.join(","),
       ...filteredData.map(p => 
-        [p.id, `"${p.name}"`, p.sku, p.category, p.quantity, `"${p.location}"`, p.reorderPoint].join(",")
+        [p.id, `"${p.name}"`, p.category, p.quantity, `"${p.location}"`, p.reorderPoint].join(",")
       )
     ];
     const csvString = csvRows.join("\n");
@@ -215,7 +215,7 @@ export default function InventoryClient({ data }: { data: Product[] }) {
         search={{
           value: searchQuery,
           onChange: (e) => setSearchQuery(e.target.value),
-          placeholder: "Buscar por nombre, SKU, categoría...",
+          placeholder: "Buscar por nombre, ID, categoría...",
         }}
       >
         <div className="flex items-center gap-2">
@@ -241,7 +241,7 @@ export default function InventoryClient({ data }: { data: Product[] }) {
                         <TableHeader>
                         <TableRow>
                             <TableHead>Nombre del Producto</TableHead>
-                            <TableHead className="hidden md:table-cell">SKU</TableHead>
+                            <TableHead className="hidden md:table-cell">ID</TableHead>
                             <TableHead className="hidden lg:table-cell">Categoría</TableHead>
                             <TableHead className="text-right">Cantidad</TableHead>
                             <TableHead className="hidden md:table-cell">Ubicación</TableHead>
@@ -255,7 +255,7 @@ export default function InventoryClient({ data }: { data: Product[] }) {
                         {filteredData.length > 0 ? filteredData.map((product) => (
                             <TableRow key={product.id}>
                             <TableCell className="font-medium">{product.name}</TableCell>
-                            <TableCell className="hidden md:table-cell">{product.sku}</TableCell>
+                            <TableCell className="hidden md:table-cell">{product.id}</TableCell>
                             <TableCell className="hidden lg:table-cell">{product.category}</TableCell>
                             <TableCell className="text-right">{product.quantity}</TableCell>
                             <TableCell className="hidden md:table-cell">{product.location}</TableCell>
@@ -334,7 +334,7 @@ export default function InventoryClient({ data }: { data: Product[] }) {
           <DialogHeader>
             <DialogTitle>Editar Producto</DialogTitle>
             <DialogDescription>
-              Modifica los detalles del producto. Haz clic en guardar cuando hayas terminado.
+              Modifica los detalles del producto. El ID no se puede cambiar.
             </DialogDescription>
           </DialogHeader>
           <EditProductForm onSubmit={handleEditProduct} product={productToEdit} isPending={isPending} />

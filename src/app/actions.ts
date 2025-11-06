@@ -8,8 +8,8 @@ import { z } from 'zod';
 import type { Product, Loan, StockMovement } from '@/lib/types';
 
 const productSchema = z.object({
+    id: z.string().min(1, "El ID es obligatorio."),
     name: z.string().min(2, "El nombre debe tener al menos 2 caracteres."),
-    sku: z.string().min(2, "El SKU debe tener al menos 2 caracteres."),
     category: z.string().min(2, "La categoría debe tener al menos 2 caracteres."),
     location: z.string().min(2, "La ubicación debe tener al menos 2 caracteres."),
     quantity: z.coerce.number().int().min(0, "La cantidad no puede ser negativa."),
@@ -53,7 +53,7 @@ async function writeData<T>(filePath: string, data: T): Promise<void> {
 }
 
 // PRODUCT ACTIONS
-export async function saveProduct(newProduct: Omit<Product, 'id'>): Promise<{ success: boolean, error?: string, data?: Product }> {
+export async function saveProduct(newProduct: Product): Promise<{ success: boolean, error?: string, data?: Product }> {
   const result = productSchema.safeParse(newProduct);
 
   if (!result.success) {
@@ -64,15 +64,12 @@ export async function saveProduct(newProduct: Omit<Product, 'id'>): Promise<{ su
   try {
     const data = await readData(productsFilePath, { products: [] });
     
-    const skuExists = data.products.some(p => p.sku.toLowerCase() === result.data.sku.toLowerCase());
-    if (skuExists) {
-        return { success: false, error: 'El SKU ya existe para otro producto.' };
+    const idExists = data.products.some(p => p.id.toLowerCase() === result.data.id.toLowerCase());
+    if (idExists) {
+        return { success: false, error: 'Este ID ya existe. Por favor, utiliza uno único.' };
     }
 
-    const productWithId = {
-        ...result.data,
-        id: (Date.now() + Math.random()).toString(36),
-    };
+    const productWithId = result.data;
 
     data.products.push(productWithId);
     await writeData(productsFilePath, data);
@@ -84,7 +81,9 @@ export async function saveProduct(newProduct: Omit<Product, 'id'>): Promise<{ su
 }
 
 export async function updateProduct(productId: string, updatedData: Partial<Omit<Product, 'id'>>): Promise<{ success: boolean; error?: string; data?: Product }> {
-    const result = productSchema.partial().safeParse(updatedData);
+    // We remove the 'id' from the schema for updates, as it shouldn't be changed.
+    const updateSchema = productSchema.omit({ id: true }).partial();
+    const result = updateSchema.safeParse(updatedData);
 
     if (!result.success) {
         const firstError = Object.values(result.error.flatten().fieldErrors)[0]?.[0];
@@ -99,16 +98,7 @@ export async function updateProduct(productId: string, updatedData: Partial<Omit
             return { success: false, error: 'No se encontró el producto a actualizar.' };
         }
         
-        const existingProduct = data.products[productIndex];
-        
-        if (result.data.sku && result.data.sku !== existingProduct.sku) {
-            const skuExists = data.products.some(p => p.sku.toLowerCase() === result.data.sku!.toLowerCase() && p.id !== productId);
-            if (skuExists) {
-                return { success: false, error: 'El SKU ya existe para otro producto.' };
-            }
-        }
-
-        data.products[productIndex] = { ...existingProduct, ...result.data };
+        data.products[productIndex] = { ...data.products[productIndex], ...result.data };
 
         await writeData(productsFilePath, data);
         return { success: true, data: data.products[productIndex] };

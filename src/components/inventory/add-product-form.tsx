@@ -19,11 +19,11 @@ import { Input } from "@/components/ui/input";
 import type { Product } from "@/lib/types";
 
 const formSchema = z.object({
+  id: z.string().min(1, {
+    message: "El ID es obligatorio.",
+  }),
   name: z.string().min(2, {
     message: "El nombre debe tener al menos 2 caracteres.",
-  }),
-  sku: z.string().min(2, {
-    message: "El SKU debe tener al menos 2 caracteres.",
   }),
   category: z.string().min(2, {
     message: "La categoría debe tener al menos 2 caracteres.",
@@ -40,7 +40,7 @@ const formSchema = z.object({
 });
 
 type AddProductFormProps = {
-  onSubmit: (data: Omit<Product, 'id'>) => void;
+  onSubmit: (data: Product) => void;
   isPending: boolean;
 };
 
@@ -48,8 +48,8 @@ export function AddProductForm({ onSubmit, isPending }: AddProductFormProps) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      id: "",
       name: "",
-      sku: "",
       category: "",
       location: "",
       quantity: 0,
@@ -66,12 +66,12 @@ export function AddProductForm({ onSubmit, isPending }: AddProductFormProps) {
       <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
         <FormField
           control={form.control}
-          name="name"
+          name="id"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Nombre del Producto</FormLabel>
+              <FormLabel>ID del Producto</FormLabel>
               <FormControl>
-                <Input placeholder="Ej: Blue Widgets" {...field} />
+                <Input placeholder="Ej: LAP-001" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -79,12 +79,12 @@ export function AddProductForm({ onSubmit, isPending }: AddProductFormProps) {
         />
         <FormField
           control={form.control}
-          name="sku"
+          name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>SKU</FormLabel>
+              <FormLabel>Nombre del Producto</FormLabel>
               <FormControl>
-                <Input placeholder="Ej: BW-001" {...field} />
+                <Input placeholder="Ej: Lámpara de Techo" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -97,7 +97,7 @@ export function AddProductForm({ onSubmit, isPending }: AddProductFormProps) {
             <FormItem>
               <FormLabel>Categoría</FormLabel>
               <FormControl>
-                <Input placeholder="Ej: Widgets" {...field} />
+                <Input placeholder="Ej: Iluminación" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
