@@ -45,7 +45,7 @@ import type { User } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 import { useFirestore, useAuth, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { FirebaseError } from 'firebase/app';
 
 type SettingsClientProps = {
@@ -83,7 +83,8 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
         };
 
         const userDocRef = doc(firestore, "users", newAuthUser.uid);
-        setDocumentNonBlocking(userDocRef, userDocData, {});
+        // This needs to be awaited to ensure the user doc exists before refreshing
+        await setDoc(userDocRef, userDocData);
 
         toast({
           title: "Usuario Creado",
@@ -182,7 +183,7 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
       return -1; // admin comes first
     }
     if (a.role !== 'admin' && b.role === 'admin') {
-      return 1; // admin comes second
+      return 1;
     }
     return a.name.localeCompare(b.name); // sort other users by name
   });
@@ -226,7 +227,7 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
                                     {user.role === 'admin' ? 'Admin' : 'Usuario'}
                                   </Badge>
                                 </TableCell>
-                                <TableCell className="flex flex-wrap gap-1">
+                                <TableCell className="flex gap-1">
                                   {user.role === 'admin' ? (
                                     <Badge>Todos</Badge>
                                   ) : user.permissions && user.permissions.length > 0 ? (
