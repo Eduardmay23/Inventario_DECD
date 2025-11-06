@@ -83,7 +83,6 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
         };
 
         const userDocRef = doc(firestore, "users", newAuthUser.uid);
-        // This needs to be awaited to ensure the user doc exists before refreshing
         await setDoc(userDocRef, userDocData);
 
         toast({
@@ -227,14 +226,16 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
                                     {user.role === 'admin' ? 'Admin' : 'Usuario'}
                                   </Badge>
                                 </TableCell>
-                                <TableCell className="flex gap-1">
-                                  {user.role === 'admin' ? (
-                                    <Badge>Todos</Badge>
-                                  ) : user.permissions && user.permissions.length > 0 ? (
-                                    user.permissions.map(p => <Badge key={p} variant="outline">{permissionLabels[p] || p}</Badge>)
-                                  ) : (
-                                    <span className="text-xs text-muted-foreground">Ninguno</span>
-                                  )}
+                                <TableCell>
+                                  <div className="flex flex-row gap-1">
+                                    {user.role === 'admin' ? (
+                                      <Badge>Todos</Badge>
+                                    ) : user.permissions && user.permissions.length > 0 ? (
+                                      user.permissions.map(p => <Badge key={p} variant="outline">{permissionLabels[p] || p}</Badge>)
+                                    ) : (
+                                      <span className="text-xs text-muted-foreground">Ninguno</span>
+                                    )}
+                                  </div>
                                 </TableCell>
                                 <TableCell className="text-right">
                                   <Button 
