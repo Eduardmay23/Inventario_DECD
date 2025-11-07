@@ -1,4 +1,5 @@
 
+
 export type Product = {
   id: string;
   name: string;
@@ -22,7 +23,7 @@ export type Loan = {
 export type StockMovement = {
     id: string;
     productId: string;
-    productName: string;
+    productName:string;
     quantity: number;
     type: 'descuento' | 'incremento';
     reason: string;
@@ -30,10 +31,9 @@ export type StockMovement = {
 };
 
 export type User = {
-    id: string; // This will be the Firebase Auth UID
-    uid: string; // Explicitly keep uid as it's used in Firestore doc
+    uid: string; // Firebase Auth UID is the document ID
     username: string; 
-    password?: string; // Only used for creation, not stored in Firestore
+    password?: string; // Only used for creation/update, not stored in Firestore
     name: string;
     role: 'admin' | 'user';
     permissions: string[];

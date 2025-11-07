@@ -43,10 +43,11 @@ import { useState, useTransition } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/lib/types';
 import { useRouter } from 'next/navigation';
-import { useFirestore, useAuth, deleteDocumentNonBlocking } from '@/firebase';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { useFirestore, useAuth } from '@/firebase';
+import { createUserWithEmailAndPassword, deleteUser } from 'firebase/auth';
+import { doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { FirebaseError } from 'firebase/app';
+import { updateUserAction } from '@/actions/users';
 
 type SettingsClientProps = {
   initialUsers: User[];
@@ -120,30 +121,25 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
   };
 
   const handleUpdateUser = (userId: string, data: Partial<Omit<User, 'id' | 'role' | 'uid'>>) => {
-     if (!firestore) return;
-    startTransition(async () => {
-        const userDocRef = doc(firestore, "users", userId);
-        
-        const dataToUpdate: Partial<User> = {};
-        if (data.name) dataToUpdate.name = data.name;
-        // Solo actualiza permisos si no es admin
-        if (userToEdit?.role !== 'admin' && data.permissions) {
-            dataToUpdate.permissions = data.permissions;
-        }
-
-        if(Object.keys(dataToUpdate).length === 0) {
+     startTransition(async () => {
+        try {
+            const result = await updateUserAction(userId, data);
+            if (result.error) {
+                throw new Error(result.error);
+            }
+            toast({
+                title: "Usuario Actualizado",
+                description: `Los datos del usuario han sido actualizados.`,
+            });
             setIsEditUserOpen(false);
-            return;
+            router.refresh();
+        } catch (error: any) {
+             toast({
+                variant: "destructive",
+                title: "Error al Actualizar",
+                description: error.message || "No se pudo actualizar el usuario.",
+            });
         }
-
-        await setDoc(userDocRef, dataToUpdate, { merge: true });
-        
-        toast({
-            title: "Usuario Actualizado",
-            description: `Los datos del usuario han sido actualizados.`,
-        });
-        setIsEditUserOpen(false);
-        router.refresh();
     });
   };
 
@@ -163,18 +159,28 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
 
   const confirmDelete = () => {
     if (userToDelete && firestore) {
-      startTransition(() => {
-          const userDocRef = doc(firestore, "users", userToDelete.id);
-          deleteDocumentNonBlocking(userDocRef);
-
-          toast({
-            title: "Usuario Eliminado",
-            description: `El registro del usuario "${userToDelete.username}" ha sido eliminado de la base de datos. La cuenta de autenticación no fue eliminada.`,
-          });
-          
-          setIsDeleteConfirmOpen(false);
-          setUserToDelete(null);
-          router.refresh();
+      startTransition(async () => {
+        try {
+            const userDocRef = doc(firestore, "users", userToDelete.uid);
+            await deleteDoc(userDocRef);
+            // We are intentionally not deleting the auth user to avoid complexity
+            // with re-authentication for the admin user performing the action.
+            // A server-side function would be needed for a clean deletion.
+            toast({
+                title: "Usuario Eliminado",
+                description: `El perfil del usuario "${userToDelete.username}" ha sido eliminado. La cuenta de acceso permanecerá activa pero sin perfil.`,
+            });
+        } catch (error: any) {
+            toast({
+                variant: "destructive",
+                title: "Error al Eliminar",
+                description: "No se pudo eliminar el perfil del usuario."
+            });
+        } finally {
+            setIsDeleteConfirmOpen(false);
+            setUserToDelete(null);
+            router.refresh();
+        }
       });
     }
   }
@@ -228,7 +234,7 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
                     </TableHeader>
                     <TableBody>
                         {sortedUsers.map(user => (
-                            <TableRow key={user.id}>
+                            <TableRow key={user.uid}>
                                 <TableCell className="font-medium">{user.name}</TableCell>
                                 <TableCell>{user.username}</TableCell>
                                 <TableCell>
@@ -284,9 +290,8 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
                 </CardHeader>
                 <CardContent>
                     <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
-                      <li>La creación de nuevos usuarios utiliza directamente Firebase Authentication.</li>
-                      <li>La edición de usuarios actualmente solo modifica sus permisos en Firestore. Cambiar correos o contraseñas requiere una nueva autenticación que no está implementada en este panel.</li>
-                      <li>La eliminación de usuarios solo borra su registro de la base de datos de Firestore, pero no elimina al usuario del sistema de autenticación de Firebase por razones de seguridad.</li>
+                      <li>La creación y edición de usuarios (incluyendo contraseña) se gestiona de forma segura a través de una acción en el servidor.</li>
+                      <li>La eliminación de usuarios solo borra su perfil de la base de datos de Firestore para evitar que se muestre. La cuenta de autenticación subyacente no se elimina para no requerir una re-autenticación compleja por parte del administrador.</li>
                     </ul>
                 </CardContent>
             </Card>
@@ -318,7 +323,7 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
               {userToEdit && (
                 <EditUserForm 
                     user={userToEdit} 
-                    onSubmit={(data) => handleUpdateUser(userToEdit.id, data)}
+                    onSubmit={(data) => handleUpdateUser(userToEdit.uid, data)}
                     isPending={isPending} 
                 />
               )}
