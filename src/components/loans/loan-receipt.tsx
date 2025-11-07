@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -16,6 +17,13 @@ type LoanReceiptProps = {
   setRecibidoPor: (value: string) => void;
 };
 
+// Helper function to parse YYYY-MM-DD without timezone issues
+const parseDate = (dateString: string) => {
+    const [year, month, day] = dateString.split('-').map(Number);
+    // Note: month is 0-indexed in JavaScript Date
+    return new Date(year, month - 1, day);
+}
+
 export function LoanReceipt({
   loan,
   entregadoPor,
@@ -23,6 +31,9 @@ export function LoanReceipt({
   setEntregadoPor,
   setRecibidoPor,
 }: LoanReceiptProps) {
+  // Use the helper to parse the date safely
+  const loanDateObject = parseDate(loan.loanDate);
+
   return (
     <div className={cn('font-sans text-foreground bg-white p-10')}>
       <header className="grid grid-cols-3 items-center pb-4 border-b border-gray-400">
@@ -69,7 +80,7 @@ export function LoanReceipt({
           </div>
           <div>
             <p className="font-bold">Fecha de Salida:</p>
-            <p>{format(new Date(loan.loanDate), "d 'de' MMMM, yyyy", { locale: es })}</p>
+            <p>{format(loanDateObject, "d 'de' MMMM, yyyy", { locale: es })}</p>
           </div>
         </div>
       </main>

@@ -182,7 +182,7 @@ export default function InventoryPage() {
                     quantity: adjustmentData.quantity,
                     type: 'descuento',
                     reason: adjustmentData.reason,
-                    date: new Date().toISOString(),
+                    date: new Date().toLocaleDateString('en-CA'), // YYYY-MM-DD
                 };
                 transaction.set(movementRef, newMovement);
             });

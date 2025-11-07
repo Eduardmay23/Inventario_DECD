@@ -78,12 +78,17 @@ export function AddLoanForm({ onSubmit, products, isPending }: AddLoanFormProps)
       form.setError("quantity", { type: "manual", message: `No puedes prestar más de ${selectedProduct.quantity} unidades.` });
       return;
     }
+    
+    const year = values.loanDate.getFullYear();
+    const month = (values.loanDate.getMonth() + 1).toString().padStart(2, '0');
+    const day = values.loanDate.getDate().toString().padStart(2, '0');
+    const formattedDate = `${year}-${month}-${day}`;
 
     onSubmit({
         productId: values.productId,
         productName: selectedProduct.name,
         requester: values.requester,
-        loanDate: values.loanDate.toISOString(),
+        loanDate: formattedDate, // YYYY-MM-DD
         quantity: values.quantity,
     });
   }

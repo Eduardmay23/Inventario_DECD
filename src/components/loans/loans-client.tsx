@@ -57,6 +57,17 @@ type LoansClientProps = {
   products: Product[];
 };
 
+// Helper function to parse YYYY-MM-DD without timezone issues
+const parseDate = (dateString: string) => {
+    // Split the string and convert to numbers. This is crucial.
+    // '2024-01-05'.split('-') => ['2024', '01', '05']
+    // .map(Number) => [2024, 1, 5]
+    const [year, month, day] = dateString.split('-').map(Number);
+    // new Date(year, monthIndex, day)
+    // The month is 0-indexed in JavaScript's Date, so we subtract 1.
+    return new Date(year, month - 1, day);
+}
+
 export default function LoansClient({ loans, products }: LoansClientProps) {
   const router = useRouter();
   const firestore = useFirestore();
@@ -129,7 +140,8 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
                     transaction.update(productRef, { quantity: newQuantity });
                 }
 
-                transaction.update(loanRef, { status: 'Devuelto', returnDate: new Date().toISOString() });
+                const returnDate = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
+                transaction.update(loanRef, { status: 'Devuelto', returnDate: returnDate });
             });
              toast({
                 title: "Préstamo Actualizado",
@@ -195,7 +207,13 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
     }, 100);
   };
 
-  const sortedLoans = [...loans].sort((a, b) => new Date(b.loanDate).getTime() - new Date(a.loanDate).getTime());
+  const sortedLoans = [...loans].sort((a, b) => {
+    // We need to parse our 'YYYY-MM-DD' strings into actual Date objects for sorting
+    const dateA = parseDate(a.loanDate);
+    const dateB = parseDate(b.loanDate);
+    return dateB.getTime() - dateA.getTime();
+  });
+
 
   return (
     <>
@@ -236,7 +254,7 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
                                 <TableCell className="font-medium">{loan.productName}</TableCell>
                                 <TableCell>{loan.requester}</TableCell>
                                 <TableCell>
-                                    {format(new Date(loan.loanDate), "d 'de' MMMM, yyyy", { locale: es })}
+                                    {format(parseDate(loan.loanDate), "d 'de' MMMM, yyyy", { locale: es })}
                                 </TableCell>
                                 <TableCell className="text-right">{loan.quantity}</TableCell>
                                 <TableCell>
