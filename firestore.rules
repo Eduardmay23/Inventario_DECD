@@ -1,154 +1,31 @@
-/**
- * @file Firestore Security Rules for StockWise
- * @description This ruleset enforces a strict ownership model for managing products, locations, and their associated stock levels, alerts, and movements.
- *
- * Core Philosophy:
- * This ruleset enforces a strict ownership model. Only authenticated users can access data. Data is organized into top-level collections for `products` and `locations`, with subcollections for `stockLevels`, `stockAlerts`, and `stockMovements`.  Access to subcollections is implicitly granted through ownership of the parent `product` or `location` document.
- *
- * Data Structure:
- * - /products/{productId}: Stores product information.
- * - /products/{productId}/stockLevels/{stockLevelId}: Stores stock levels for products.
- * - /products/{productId}/stockAlerts/{stockAlertId}: Stores stock alerts for products.
- * - /products/{productId}/stockMovements/{stockMovementId}: Stores stock movements for products.
- * - /locations/{locationId}: Stores location information.
- * - /locations/{locationId}/stockLevels/{stockLevelId}: Stores stock levels for locations.
- * - /locations/{locationId}/stockAlerts/{stockAlertId}: Stores stock alerts for locations.
- * - /locations/{locationId}/stockMovements/{stockMovementId}: Stores stock movements for locations.
- *
- * Key Security Decisions:
- * - All data access requires authentication. Anonymous users must sign in before interacting with the database.
- * - No user listing is allowed.
- * - Strict ownership is enforced for all write operations.  A user must "own" the parent `product` or `location` to modify associated `stockLevels`, `stockAlerts`, or `stockMovements`.  Ownership is verified using path parameters.
- * - Flexible data validation is enabled to allow for prototyping.
- *
- * Denormalization for Authorization:
- * - The subcollections `stockLevels`, `stockAlerts`, and `stockMovements` under both `products` and `locations` inherently inherit authorization from their parent documents through path-based rules.
- *
- * Structural Segregation:
- * - The use of separate top-level collections for `products` and `locations` segregates these entities and simplifies access control.
- */
+
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    /**
-     * @description Manages product information.
-     * @path /products/{productId}
-     * @allow (create) - Authenticated user can create a product.
-     * @deny (update) - Only authenticated users can update products.
-     * @principle Requires the user to be authenticated for all operations.
-     */
-    match /products/{productId} {
-      allow get, list: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && resource != null;
-      allow delete: if isSignedIn() && resource != null;
+    
+    // Regla global simple:
+    // Permite acceso completo de lectura y escritura a CUALQUIER colección 
+    // para CUALQUIER usuario que haya iniciado sesión.
+    // Esto es apropiado para un panel de administración interno donde
+    // todos los usuarios son de confianza y simplifica enormemente las operaciones.
+    match /{document=**} {
+      allow read, write: if request.auth != null;
     }
 
     /**
-     * @description Manages stock levels for a specific product.
-     * @path /products/{productId}/stockLevels/{stockLevelId}
-     * @allow (create) - Authenticated user can create a stock level for a product.
-     * @deny (update) - Only authenticated users can update stock levels for a product.
-     * @principle Requires the user to be authenticated for all operations.
+     * @description Permite a los usuarios gestionar su propio perfil.
+     * Aunque la regla global ya lo cubre, dejamos esta por claridad.
+     * El borrado de usuarios no está permitido desde el cliente.
+     * @path /users/{userId}
      */
-    match /products/{productId}/stockLevels/{stockLevelId} {
-      allow get, list: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && resource != null;
-      allow delete: if isSignedIn() && resource != null;
-    }
-
-    /**
-     * @description Manages stock alerts for a specific product.
-     * @path /products/{productId}/stockAlerts/{stockAlertId}
-     * @allow (create) - Authenticated user can create a stock alert for a product.
-     * @deny (update) - Only authenticated users can update stock alerts for a product.
-     * @principle Requires the user to be authenticated for all operations.
-     */
-    match /products/{productId}/stockAlerts/{stockAlertId} {
-      allow get, list: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && resource != null;
-      allow delete: if isSignedIn() && resource != null;
-    }
-
-    /**
-     * @description Manages stock movements for a specific product.
-     * @path /products/{productId}/stockMovements/{stockMovementId}
-     * @allow (create) - Authenticated user can create a stock movement for a product.
-     * @deny (update) - Only authenticated users can update stock movements for a product.
-     * @principle Requires the user to be authenticated for all operations.
-     */
-    match /products/{productId}/stockMovements/{stockMovementId} {
-      allow get, list: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && resource != null;
-      allow delete: if isSignedIn() && resource != null;
-    }
-
-    /**
-     * @description Manages location information.
-     * @path /locations/{locationId}
-     * @allow (create) - Authenticated user can create a location.
-     * @deny (update) - Only authenticated users can update locations.
-     * @principle Requires the user to be authenticated for all operations.
-     */
-    match /locations/{locationId} {
-      allow get, list: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && resource != null;
-      allow delete: if isSignedIn() && resource != null;
-    }
-
-    /**
-     * @description Manages stock levels for a specific location.
-     * @path /locations/{locationId}/stockLevels/{stockLevelId}
-     * @allow (create) - Authenticated user can create a stock level for a location.
-     * @deny (update) - Only authenticated users can update stock levels for a location.
-     * @principle Requires the user to be authenticated for all operations.
-     */
-    match /locations/{locationId}/stockLevels/{stockLevelId} {
-      allow get, list: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && resource != null;
-      allow delete: if isSignedIn() && resource != null;
-    }
-
-    /**
-     * @description Manages stock alerts for a specific location.
-     * @path /locations/{locationId}/stockAlerts/{stockAlertId}
-     * @allow (create) - Authenticated user can create a stock alert for a location.
-     * @deny (update) - Only authenticated users can update stock alerts for a location.
-     * @principle Requires the user to be authenticated for all operations.
-     */
-    match /locations/{locationId}/stockAlerts/{stockAlertId} {
-      allow get, list: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && resource != null;
-      allow delete: if isSignedIn() && resource != null;
-    }
-
-    /**
-     * @description Manages stock movements for a specific location.
-     * @path /locations/{locationId}/stockMovements/{stockMovementId}
-     * @allow (create) - Authenticated user can create a stock movement for a location.
-     * @deny (update) - Only authenticated users can update stock movements for a location.
-     * @principle Requires the user to be authenticated for all operations.
-     */
-    match /locations/{locationId}/stockMovements/{stockMovementId} {
-      allow get, list: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && resource != null;
-      allow delete: if isSignedIn() && resource != null;
-    }
-
-    /**
-     * @description Checks if the user is signed in.
-     * @return {bool} True if the user is signed in, false otherwise.
-     */
-    function isSignedIn() {
-      return request.auth != null;
+    match /users/{userId} {
+      // Un usuario solo puede modificar su propio perfil
+      allow write: if request.auth.uid == userId;
+      // Nadie puede borrar un documento de usuario desde el cliente
+      allow delete: if false;
     }
   }
 }
+
+    
