@@ -1,13 +1,8 @@
 
 "use client";
 
-import { useState, useMemo, useTransition } from "react";
-import { Edit, MoreHorizontal, Trash2, MinusCircle, PlusCircle } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { doc, setDoc, deleteDoc, writeBatch, collection, runTransaction, getDocs, query, where, getDoc } from 'firebase/firestore';
-
-import type { Product, StockMovement } from "@/lib/types";
-import { useFirestore } from '@/firebase';
+import { Edit, MoreHorizontal, Trash2, MinusCircle, PlusCircle, Loader2 } from "lucide-react";
+import type { Product } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -43,200 +38,56 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AddProductForm } from "./add-product-form";
 import { EditProductForm } from "./edit-product-form";
 import { AdjustStockForm } from "./adjust-stock-form";
-import AppHeader from "../header";
 
+interface InventoryClientProps {
+  data: Product[];
+  isPending: boolean;
+  isAddDialogOpen: boolean;
+  setIsAddDialogOpen: (isOpen: boolean) => void;
+  isDeleteDialogOpen: boolean;
+  setIsDeleteDialogOpen: (isOpen: boolean) => void;
+  isEditDialogOpen: boolean;
+  setIsEditDialogOpen: (isOpen: boolean) => void;
+  isAdjustDialogOpen: boolean;
+  setIsAdjustDialogOpen: (isOpen: boolean) => void;
+  productToDelete: Product | null;
+  productToEdit: Product | null;
+  productToAdjust: Product | null;
+  onAddProduct: (newProductData: Product) => void;
+  onEditProduct: (editedProductData: Partial<Omit<Product, 'id'>>) => void;
+  onAdjustStock: (adjustmentData: { quantity: number; reason: string }) => void;
+  onConfirmDelete: () => void;
+  onEditClick: (product: Product) => void;
+  onDeleteClick: (product: Product) => void;
+  onAdjustClick: (product: Product) => void;
+}
 
-export default function InventoryClient({ data, searchQuery }: { data: Product[], searchQuery: string }) {
-  const router = useRouter();
-  const firestore = useFirestore();
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isAdjustDialogOpen, setIsAdjustDialogOpen] = useState(false);
-  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
-  const [productToEdit, setProductToEdit] = useState<Product | null>(null);
-  const [productToAdjust, setProductToAdjust] = useState<Product | null>(null);
-  const [isPending, startTransition] = useTransition();
-  const { toast } = useToast();
-
-  const handleEditClick = (product: Product) => {
-    setProductToEdit(product);
-    setIsEditDialogOpen(true);
-  };
-
-  const handleDeleteClick = (product: Product) => {
-    setProductToDelete(product);
-    setIsDeleteDialogOpen(true);
-  };
-  
-  const handleAdjustClick = (product: Product) => {
-    setProductToAdjust(product);
-    setIsAdjustDialogOpen(true);
-  };
-
-  const confirmDelete = () => {
-    if (productToDelete && firestore) {
-      startTransition(async () => {
-        try {
-            const loansQuery = query(collection(firestore, 'loans'), where('productId', '==', productToDelete.id), where('status', '==', 'Prestado'));
-            const activeLoansSnapshot = await getDocs(loansQuery);
-            
-            if (!activeLoansSnapshot.empty) {
-                toast({
-                    variant: "destructive",
-                    title: "Error al Eliminar",
-                    description: `No se puede eliminar. Hay ${activeLoansSnapshot.size} préstamo(s) activo(s) para este producto.`,
-                });
-                return;
-            }
-    
-            const productRef = doc(firestore, 'products', productToDelete.id);
-            await deleteDoc(productRef);
-
-            toast({
-                title: "Producto Eliminado",
-                description: `El producto "${productToDelete.name}" ha sido eliminado.`,
-            });
-            router.refresh();
-        } catch (error: any) {
-          toast({
-            variant: "destructive",
-            title: "Error al Eliminar",
-            description: error.message || "No se pudo eliminar el producto.",
-          });
-        } finally {
-            setIsDeleteDialogOpen(false);
-            setProductToDelete(null);
-        }
-      });
-    }
-  };
-  
-  const handleAddProduct = (newProductData: Product) => {
-     if (!firestore) return;
-    startTransition(async () => {
-      try {
-        const productRef = doc(firestore, 'products', newProductData.id);
-        const docSnap = await getDoc(productRef);
-        if (docSnap.exists()) {
-            toast({
-                variant: "destructive",
-                title: "Error al Guardar",
-                description: 'Este ID de producto ya existe. Por favor, utiliza uno único.',
-            });
-            return;
-        }
-
-        await setDoc(productRef, newProductData);
-        toast({
-          title: "Producto Añadido",
-          description: `El producto "${newProductData.name}" ha sido guardado.`,
-        });
-        setIsAddDialogOpen(false);
-        router.refresh();
-      } catch (error: any) {
-        toast({
-          variant: "destructive",
-          title: "Error al Guardar",
-          description: error.message || "No se pudo guardar el producto.",
-        });
-      }
-    });
-  };
-
-  const handleEditProduct = (editedProductData: Partial<Omit<Product, 'id'>>) => {
-    if (productToEdit && firestore) {
-      startTransition(async () => {
-        try {
-            const productRef = doc(firestore, 'products', productToEdit.id);
-            await setDoc(productRef, editedProductData, { merge: true });
-            toast({
-                title: "Producto Actualizado",
-                description: `El producto ha sido actualizado.`,
-            });
-            setIsEditDialogOpen(false);
-            setProductToEdit(null);
-            router.refresh();
-        } catch (error: any) {
-          toast({
-            variant: "destructive",
-            title: "Error al Actualizar",
-            description: error.message || "No se pudo actualizar el producto.",
-          });
-        }
-      });
-    }
-  };
-
-  const handleAdjustStock = (adjustmentData: { quantity: number, reason: string }) => {
-    if (productToAdjust && firestore) {
-      startTransition(async () => {
-        try {
-            const productRef = doc(firestore, 'products', productToAdjust.id);
-            await runTransaction(firestore, async (transaction) => {
-                const productDoc = await transaction.get(productRef);
-                if (!productDoc.exists()) {
-                    throw new Error("No se encontró el producto.");
-                }
-
-                const product = productDoc.data() as Product;
-                if (adjustmentData.quantity > product.quantity) {
-                    throw new Error(`Stock insuficiente. Solo hay ${product.quantity} unidades.`);
-                }
-
-                const newQuantity = product.quantity - adjustmentData.quantity;
-                transaction.update(productRef, { quantity: newQuantity });
-
-                const movementRef = doc(collection(firestore, `movements`));
-                const newMovement: StockMovement = {
-                    id: movementRef.id,
-                    productId: product.id,
-                    productName: product.name,
-                    quantity: adjustmentData.quantity,
-                    type: 'descuento',
-                    reason: adjustmentData.reason,
-                    date: new Date().toISOString(),
-                };
-                transaction.set(movementRef, newMovement);
-            });
-
-            toast({
-                title: "Stock Ajustado",
-                description: `Se descontaron ${adjustmentData.quantity} unidades de "${productToAdjust.name}".`,
-            });
-            setIsAdjustDialogOpen(false);
-            setProductToAdjust(null);
-            router.refresh();
-        } catch (error: any) {
-          toast({
-            variant: "destructive",
-            title: "Error al Ajustar",
-            description: error.message || "No se pudo ajustar el stock.",
-          });
-        }
-      });
-    }
-  };
-
-  const filteredData = useMemo(() => {
-    if (!data) return [];
-    const lowercasedQuery = searchQuery.toLowerCase();
-    if (!lowercasedQuery) {
-      return data;
-    }
-    return data.filter((product) => {
-      const nameMatch = product.name?.toLowerCase().includes(lowercasedQuery) ?? false;
-      const idMatch = product.id?.toLowerCase().includes(lowercasedQuery) ?? false;
-      const categoryMatch = product.category?.toLowerCase().includes(lowercasedQuery) ?? false;
-      return nameMatch || idMatch || categoryMatch;
-    });
-  }, [data, searchQuery]);
-
+export default function InventoryClient({
+  data,
+  isPending,
+  isAddDialogOpen,
+  setIsAddDialogOpen,
+  isDeleteDialogOpen,
+  setIsDeleteDialogOpen,
+  isEditDialogOpen,
+  setIsEditDialogOpen,
+  isAdjustDialogOpen,
+  setIsAdjustDialogOpen,
+  productToDelete,
+  productToEdit,
+  productToAdjust,
+  onAddProduct,
+  onEditProduct,
+  onAdjustStock,
+  onConfirmDelete,
+  onEditClick,
+  onDeleteClick,
+  onAdjustClick,
+}: InventoryClientProps) {
 
   return (
     <>
@@ -271,7 +122,7 @@ export default function InventoryClient({ data, searchQuery }: { data: Product[]
                         </TableRow>
                         </TableHeader>
                         <TableBody>
-                        {filteredData.length > 0 ? filteredData.map((product) => (
+                        {data.length > 0 ? data.map((product) => (
                             <TableRow key={product.id}>
                             <TableCell className="font-medium">{product.name}</TableCell>
                             <TableCell className="hidden md:table-cell">{product.id}</TableCell>
@@ -305,15 +156,15 @@ export default function InventoryClient({ data, searchQuery }: { data: Product[]
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                     <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                                    <DropdownMenuItem onSelect={() => handleAdjustClick(product)}>
+                                    <DropdownMenuItem onSelect={() => onAdjustClick(product)}>
                                       <MinusCircle className="mr-2 h-4 w-4" /> Ajustar Stock
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem onSelect={() => handleEditClick(product)}>
+                                    <DropdownMenuItem onSelect={() => onEditClick(product)}>
                                         <Edit className="mr-2 h-4 w-4" /> Editar
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem
-                                    onSelect={() => handleDeleteClick(product)}
+                                    onSelect={() => onDeleteClick(product)}
                                     className="text-destructive focus:bg-destructive/10 focus:text-destructive"
                                     >
                                     <Trash2 className="mr-2 h-4 w-4" /> Eliminar
@@ -350,7 +201,7 @@ export default function InventoryClient({ data, searchQuery }: { data: Product[]
               Rellena los detalles del nuevo producto. Haz clic en guardar cuando hayas terminado.
             </DialogDescription>
           </DialogHeader>
-          <AddProductForm onSubmit={handleAddProduct} isPending={isPending} />
+          <AddProductForm onSubmit={onAddProduct} isPending={isPending} />
         </DialogContent>
       </Dialog>
       
@@ -362,7 +213,7 @@ export default function InventoryClient({ data, searchQuery }: { data: Product[]
               Modifica los detalles del producto. El ID no se puede cambiar.
             </DialogDescription>
           </DialogHeader>
-          <EditProductForm onSubmit={handleEditProduct} product={productToEdit} isPending={isPending} />
+          <EditProductForm onSubmit={onEditProduct} product={productToEdit} isPending={isPending} />
         </DialogContent>
       </Dialog>
       
@@ -374,7 +225,7 @@ export default function InventoryClient({ data, searchQuery }: { data: Product[]
               Descuenta unidades del inventario por uso interno, daño, etc. Esta acción quedará registrada.
             </DialogDescription>
           </DialogHeader>
-          <AdjustStockForm onSubmit={handleAdjustStock} product={productToAdjust} isPending={isPending} />
+          <AdjustStockForm onSubmit={onAdjustStock} product={productToAdjust} isPending={isPending} />
         </DialogContent>
       </Dialog>
 
@@ -389,7 +240,7 @@ export default function InventoryClient({ data, searchQuery }: { data: Product[]
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} disabled={isPending} className="bg-destructive hover:bg-destructive/90">
+            <AlertDialogAction onClick={onConfirmDelete} disabled={isPending} className="bg-destructive hover:bg-destructive/90">
               {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Eliminar"}
             </AlertDialogAction>
           </AlertDialogFooter>
