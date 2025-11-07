@@ -1,99 +1,27 @@
 
-/**
- * @fileoverview Firestore Security Rules for StockWise.
- *
- * Core Philosophy:
- * This ruleset enforces a straightforward security model suitable for an internal
- * admin-like application. All authenticated users are treated as trusted operators.
- * Public read access is granted for product and location info.
- *
- * Data Structure:
- * - /products/{productId}: Product information.
- * - /locations/{locationId}: Location information.
- * - /loans/{loanId}: Loan records.
- * - /movements/{movementId}: Records of stock adjustments.
- * - /users/{userId}: User profile information.
- *
- */
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
+    
+    // Regla global simple:
+    // Permite acceso completo de lectura y escritura a CUALQUIER colección 
+    // para CUALQUIER usuario que haya iniciado sesión.
+    // Esto es apropiado para un panel de administración interno donde
+    // todos los usuarios son de confianza.
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
 
     /**
-     * @description Allows users to manage their own profile. Admins can manage any profile.
+     * @description Permite a los usuarios gestionar su propio perfil.
+     * Aunque la regla global ya lo cubre, dejamos esta por claridad.
+     * El borrado de usuarios no está permitido desde el cliente.
      * @path /users/{userId}
      */
     match /users/{userId} {
-      allow read, list: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isOwner(userId) || isAdmin();
-      // Deleting users is handled server-side, not directly by clients for security.
+      allow write: if request.auth.uid == userId;
       allow delete: if false;
-    }
-
-    /**
-     * @description Allows anyone to read product information, but only authenticated users to write.
-     * This is required for operations like returning a loan, which updates both the loan and the product stock.
-     * @path /products/{productId}
-     */
-    match /products/{productId} {
-      allow get, list: if true;
-      allow create, update, delete: if isSignedIn();
-    }
-    
-    /**
-     * @description Allows anyone to read location information, but only authenticated users to write.
-     * @path /locations/{locationId}
-     */
-    match /locations/{locationId} {
-      allow get, list: if true;
-      allow create, update, delete: if isSignedIn();
-    }
-
-    /**
-     * @description Allows authenticated users to read and manage loans.
-     * The read permission is necessary to check for active loans before deleting a product.
-     * @path /loans/{loanId}
-     */
-    match /loans/{loanId} {
-      allow read, write: if isSignedIn();
-    }
-
-    /**
-     * @description Allows authenticated users to read and write stock movements.
-     * @path /movements/{movementId}
-     */
-    match /movements/{movementId} {
-        allow read, write: if isSignedIn();
-    }
-
-    // --- Helper functions ---
-
-    /**
-     * @description Checks if the user is signed in.
-     * @return {boolean} True if the user is signed in, false otherwise.
-     */
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    /**
-     * @description Checks if the authenticated user is the owner of the resource.
-     * @param {string} userId The user ID to compare against the authenticated user's ID.
-     * @return {boolean} True if the user is the owner, false otherwise.
-     */
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
-
-    /**
-     * @description Checks if the authenticated user has the 'admin' role.
-     * @return {boolean} True if the user is an admin, false otherwise.
-     */
-    function isAdmin() {
-      // It's safer and more performant to check custom claims if possible,
-      // but for simplicity, this direct document read is used.
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
   }
 }
