@@ -38,20 +38,18 @@ service cloud.firestore {
     }
 
     /**
-     * @description Allows anyone to read product information, but only authenticated users to create, update, or delete products.
+     * @description Allows anyone to read product information, but only authenticated users to write.
      * @path /products/{productId}
-     * @allow get, list: if true;
-     * @allow create, update, delete: if isSignedIn();
+     * @allow read, write: if isSignedIn();
      */
     match /products/{productId} {
-      allow get, list: if true;
-      allow create, update, delete: if isSignedIn();
+      allow read, write: if isSignedIn();
     }
 
     /**
      * @description Allows anyone to read location information, but only authenticated users to create, update, or delete locations.
      * @path /locations/{locationId}
-     * @allow get, list: if true
+     * @allow read, list: if true;
      * @allow create, update, delete: if isSignedIn();
      */
     match /locations/{locationId} {
@@ -71,7 +69,7 @@ service cloud.firestore {
     /**
      * @description Allows anyone to read stock level information, but only authenticated users to create, update, or delete stock levels.
      * @path /products/{productId}/stockLevels/{stockLevelId}
-     * @allow get, list: if true
+     * @allow read, list: if true;
      * @allow create, update, delete: if isSignedIn();
      */
     match /products/{productId}/stockLevels/{stockLevelId} {
@@ -91,7 +89,7 @@ service cloud.firestore {
     /**
      * @description Allows anyone to read stock movement information, but only authenticated users to create, update, or delete stock movements.
      * @path /products/{productId}/stockMovements/{stockMovementId}
-     * @allow get, list: if true
+     * @allow read, list: if true;
      * @allow create, update, delete: if isSignedIn();
      */
     match /products/{productId}/stockMovements/{stockMovementId} {
