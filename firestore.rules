@@ -51,6 +51,7 @@ service cloud.firestore {
 
     /**
      * @description Allows authenticated users to read and manage loans.
+     * The read permission is necessary to check for active loans before deleting a product.
      * @path /loans/{loanId}
      */
     match /loans/{loanId} {
@@ -93,5 +94,3 @@ service cloud.firestore {
     }
   }
 }
-
-    
