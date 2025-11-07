@@ -136,7 +136,7 @@ export default function ReportsClient({ products, loans, movements }: ReportsCli
             <div className="rounded-md border bg-muted/30 p-4 leading-relaxed report-printable-area">
               <ReportViewer report={report} />
             </div>
-            <div className="flex items-center gap-4 print-hide">
+            <div className="flex items-center gap-2 print-hide">
               <Button variant="outline" size="sm" onClick={handleCloseReport}>
                 Cerrar
               </Button>
@@ -150,7 +150,7 @@ export default function ReportsClient({ products, loans, movements }: ReportsCli
                   'Volver a Generar'
                 )}
               </Button>
-              <Button size="sm" onClick={handlePrint} variant="default">
+              <Button size="sm" onClick={handlePrint} variant="default" className="ml-auto">
                 <Printer className="mr-2 h-4 w-4" />
                 Imprimir Reporte
               </Button>
