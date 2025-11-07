@@ -40,11 +40,11 @@ export default function AppHeader({
             />
           </div>
         )}
+        {children}
         <Button variant="ghost" size="icon" className="rounded-full">
           <Bell className="h-5 w-5" />
           <span className="sr-only">Alternar notificaciones</span>
         </Button>
-        {children}
       </div>
     </header>
   );
