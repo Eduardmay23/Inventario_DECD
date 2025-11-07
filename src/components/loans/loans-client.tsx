@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { PlusCircle, MoreHorizontal, CheckCircle, Trash2, Loader2, Printer } from "lucide-react";
+import { PlusCircle, MoreHorizontal, CheckCircle, Trash2, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { useRouter } from 'next/navigation';
@@ -35,7 +35,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -50,7 +49,6 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AddLoanForm } from "./add-loan-form";
-import { LoanReceipt } from "./loan-receipt";
 
 type LoansClientProps = {
   loans: Loan[];
@@ -64,8 +62,6 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [loanToDelete, setLoanToDelete] = useState<Loan | null>(null);
-  const [loanToPrint, setLoanToPrint] = useState<Loan | null>(null);
-  const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
   const { toast } = useToast();
 
   const handleAddLoan = async (loanData: Omit<Loan, 'id' | 'status'>) => {
@@ -150,11 +146,6 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
     setIsDeleteDialogOpen(true);
   };
 
-  const handlePrintClick = (loan: Loan) => {
-    setLoanToPrint(loan);
-    setIsPrintDialogOpen(true);
-  };
-
   const confirmDelete = () => {
     if (loanToDelete && firestore) {
       startTransition(async () => {
@@ -192,16 +183,10 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
     return dateB.localeCompare(dateA);
   });
 
-  const handlePrint = () => {
-    setTimeout(() => {
-        window.print();
-    }, 100);
-  };
-
 
   return (
     <>
-      <div className="flex flex-1 flex-col print-hide">
+      <div className="flex flex-1 flex-col">
         <AppHeader title="Préstamos">
             <div className="flex items-center gap-2">
                 <Button size="sm" onClick={() => setIsAddDialogOpen(true)} disabled={isPending}>
@@ -276,9 +261,6 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
                                       </DropdownMenuTrigger>
                                       <DropdownMenuContent align="end">
                                           <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                                          <DropdownMenuItem onSelect={() => handlePrintClick(loan)}>
-                                              <Printer className="mr-2 h-4 w-4" /> Imprimir Comprobante
-                                          </DropdownMenuItem>
                                           <DropdownMenuItem 
                                               onSelect={() => handleMarkAsReturned(loan)}
                                               disabled={loan.status === 'Devuelto' || isPending}
@@ -314,11 +296,6 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
         </main>
       </div>
 
-      {/* Contenedor solo para impresión, oculto en la pantalla */}
-      <div className="printable-content">
-          {loanToPrint && <LoanReceipt loan={loanToPrint} />}
-      </div>
-
       <Dialog open={isAddDialogOpen} onOpenChange={!isPending ? setIsAddDialogOpen : undefined}>
           <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -347,28 +324,6 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
           </AlertDialogFooter>
           </AlertDialogContent>
       </AlertDialog>
-
-      <Dialog open={isPrintDialogOpen} onOpenChange={setIsPrintDialogOpen}>
-          <DialogContent className="max-w-3xl">
-              <DialogHeader>
-                  <DialogTitle>Comprobante de Préstamo</DialogTitle>
-                  <DialogDescription>
-                      Esta es una vista previa del comprobante que se va a imprimir.
-                  </DialogDescription>
-              </DialogHeader>
-              {/* Este div es para la VISTA PREVIA en pantalla */}
-              <div>
-                  {loanToPrint && <LoanReceipt loan={loanToPrint} />}
-              </div>
-              <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsPrintDialogOpen(false)}>Cerrar</Button>
-                  <Button onClick={handlePrint}>
-                      <Printer className="mr-2 h-4 w-4" />
-                      Imprimir
-                  </Button>
-              </DialogFooter>
-          </DialogContent>
-      </Dialog>
     </>
   );
 }

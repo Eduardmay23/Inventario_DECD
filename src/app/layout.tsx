@@ -5,7 +5,6 @@ import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/toaster";
 import { FirebaseClientProvider } from "@/firebase/client-provider";
 import "./globals.css";
-import "./print.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 

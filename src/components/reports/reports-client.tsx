@@ -2,13 +2,12 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { Bot, Loader2, Package, AlertTriangle, ArrowRightLeft, FileText, Printer, MinusSquare } from 'lucide-react';
+import { Bot, Loader2, Package, AlertTriangle, ArrowRightLeft, FileText, MinusSquare } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { generateInventoryReport, type GenerateInventoryReportOutput } from '@/ai/flows/generate-inventory-report';
 import type { Loan, Product, StockMovement } from '@/lib/types';
-import { Badge } from '../ui/badge';
 
 interface ReportsClientProps {
   products: Product[];
@@ -126,10 +125,6 @@ export default function ReportsClient({ products, loans, movements }: ReportsCli
     handleGenerateReport();
   };
 
-  const handlePrint = () => {
-    window.print();
-  };
-
   return (
     <>
       <Card>
@@ -145,7 +140,6 @@ export default function ReportsClient({ products, loans, movements }: ReportsCli
         <CardContent>
           {report ? (
             <div className="space-y-4">
-              {/* Este div es para la VISTA PREVIA en pantalla */}
               <div className="rounded-md border bg-muted/30 p-4 leading-relaxed">
                 <ReportViewer report={report} />
               </div>
@@ -162,10 +156,6 @@ export default function ReportsClient({ products, loans, movements }: ReportsCli
                   ) : (
                     'Volver a Generar'
                   )}
-                </Button>
-                <Button size="sm" onClick={handlePrint} variant="default">
-                  <Printer className="mr-2 h-4 w-4" />
-                  Imprimir Reporte
                 </Button>
               </div>
             </div>
@@ -193,10 +183,6 @@ export default function ReportsClient({ products, loans, movements }: ReportsCli
           )}
         </CardContent>
       </Card>
-      {/* Contenedor solo para impresión, oculto en la pantalla */}
-      <div className="printable-content">
-          {report && <ReportViewer report={report} />}
-      </div>
     </>
   );
 }
