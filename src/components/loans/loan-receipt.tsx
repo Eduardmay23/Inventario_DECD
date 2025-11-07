@@ -17,11 +17,15 @@ type LoanReceiptProps = {
   setRecibidoPor: (value: string) => void;
 };
 
-// Helper function to parse YYYY-MM-DD without timezone issues
-const parseDate = (dateString: string) => {
-    const [year, month, day] = dateString.split('-').map(Number);
-    // Note: month is 0-indexed in JavaScript Date
-    return new Date(year, month - 1, day);
+// Helper function to parse YYYY-MM-DD or Date object without timezone issues
+const parseDate = (date: string | Date): Date => {
+  if (date instanceof Date) {
+    return date;
+  }
+  // Handles 'YYYY-MM-DD' strings
+  const [year, month, day] = date.split('-').map(Number);
+  // The month is 0-indexed in JavaScript's Date, so subtract 1.
+  return new Date(year, month - 1, day);
 }
 
 export function LoanReceipt({
@@ -114,3 +118,5 @@ export function LoanReceipt({
     </div>
   );
 }
+
+    
