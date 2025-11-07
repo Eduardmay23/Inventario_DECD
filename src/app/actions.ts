@@ -53,8 +53,8 @@ async function readData<T>(filePath: string): Promise<T | null> {
 
 // PRODUCT SEEDING ACTION
 export async function seedProducts(): Promise<{ success: boolean; error?: string; count?: number }> {
+    const { firestore } = await getSdks();
     try {
-        const { firestore } = getSdks();
         const productsData = await readData<{ products: Product[] }>(productsFilePath);
 
         if (!productsData || !productsData.products || productsData.products.length === 0) {
@@ -100,8 +100,8 @@ export async function saveProduct(newProduct: Product): Promise<{ success: boole
     return { success: false, error: firstError || "Datos de producto inválidos." };
   }
   
+  const { firestore } = await getSdks();
   try {
-    const { firestore } = getSdks();
     const productRef = doc(firestore, 'products', result.data.id);
     
     const docSnap = await getDoc(productRef);
@@ -132,8 +132,8 @@ export async function updateProduct(productId: string, updatedData: Partial<Omit
         return { success: false, error: "No hay datos para actualizar." };
     }
 
+    const { firestore } = await getSdks();
     try {
-        const { firestore } = getSdks();
         const productRef = doc(firestore, 'products', productId);
 
         await setDoc(productRef, result.data, { merge: true });
@@ -149,9 +149,8 @@ export async function updateProduct(productId: string, updatedData: Partial<Omit
 }
 
 export async function deleteProduct(productId: string): Promise<{ success: boolean; error?: string; }> {
+    const { firestore } = await getSdks();
     try {
-        const { firestore } = getSdks();
-        
         const loansQuery = query(collection(firestore, 'loans'), where('productId', '==', productId), where('status', '==', 'Prestado'));
         const activeLoansSnapshot = await getDocs(loansQuery);
         
@@ -177,8 +176,8 @@ export async function adjustStock(productId: string, adjustmentData: { quantity:
     return { success: false, error: firstError || "Datos de ajuste inválidos." };
   }
 
+  const { firestore } = await getSdks();
   try {
-    const { firestore } = getSdks();
     const productRef = doc(firestore, 'products', productId);
     
     await runTransaction(firestore, async (transaction) => {
@@ -219,8 +218,8 @@ export async function adjustStock(productId: string, adjustmentData: { quantity:
 
 // LOAN SEEDING ACTION
 export async function seedLoans(): Promise<{ success: boolean; error?: string; count?: number }> {
+    const { firestore } = await getSdks();
     try {
-        const { firestore } = getSdks();
         const loansData = await readData<{ loans: Loan[] }>(loansFilePath);
 
         if (!loansData || !loansData.loans || loansData.loans.length === 0) {
@@ -259,7 +258,7 @@ export async function saveLoan(loanData: Omit<Loan, 'id' | 'status'>): Promise<{
         return { success: false, error: firstError || "Datos de préstamo inválidos." };
     }
     
-    const { firestore } = getSdks();
+    const { firestore } = await getSdks();
 
     try {
         const newLoanRef = doc(collection(firestore, 'loans'));
@@ -300,7 +299,7 @@ export async function saveLoan(loanData: Omit<Loan, 'id' | 'status'>): Promise<{
 }
 
 export async function updateLoanStatus(loanId: string, status: 'Prestado' | 'Devuelto'): Promise<{ success: boolean; error?: string }> {
-    const { firestore } = getSdks();
+    const { firestore } = await getSdks();
     
     try {
         const loanRef = doc(firestore, 'loans', loanId);
@@ -341,7 +340,7 @@ export async function updateLoanStatus(loanId: string, status: 'Prestado' | 'Dev
 }
 
 export async function deleteLoan(loanId: string): Promise<{ success: boolean; error?: string }> {
-    const { firestore } = getSdks();
+    const { firestore } = await getSdks();
     try {
         const loanRef = doc(firestore, 'loans', loanId);
         const loanDoc = await getDoc(loanRef);
