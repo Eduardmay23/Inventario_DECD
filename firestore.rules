@@ -5,6 +5,7 @@
  * Core Philosophy:
  * This ruleset enforces a straightforward security model suitable for an internal
  * admin-like application. All authenticated users are treated as trusted operators.
+ * Public read access is granted for product and location info.
  *
  * Data Structure:
  * - /products/{productId}: Product information.
@@ -90,6 +91,8 @@ service cloud.firestore {
      * @return {boolean} True if the user is an admin, false otherwise.
      */
     function isAdmin() {
+      // It's safer and more performant to check custom claims if possible,
+      // but for simplicity, this direct document read is used.
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
   }
