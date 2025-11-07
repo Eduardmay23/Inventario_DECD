@@ -6,6 +6,26 @@
   .print-hide {
     display: none !important;
   }
+  
+  #printable-area {
+    display: block;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    margin: 0;
+  }
+
+  #printable-area > div {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100vh;
+    box-shadow: none;
+    border: none;
+    border-radius: 0;
+  }
 
   .report-printable-area, .report-printable-area * {
     visibility: visible;
@@ -23,15 +43,5 @@
     background: white !important;
     color: black !important;
     box-shadow: none;
-  }
-}
-
-.print-hide {
-  display: revert;
-}
-
-@media print {
-  .print-hide {
-    display: none;
   }
 }
