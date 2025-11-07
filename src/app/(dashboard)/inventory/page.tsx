@@ -16,8 +16,7 @@ export default function InventoryPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isSeeding, startSeedingTransition] = useTransition();
-  // State to prevent re-seeding in the same session
-  const [hasSeeded, setHasSeeded] = useState(false);
+  const [hasSeedingBeenAttempted, setHasSeedingBeenAttempted] = useState(false);
 
   const productsRef = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -27,9 +26,8 @@ export default function InventoryPage() {
   const { data: products, isLoading } = useCollection<Product>(productsRef);
   
   useEffect(() => {
-    // Only run this logic once when data has loaded, is empty, and we haven't tried seeding yet.
-    if (!isLoading && products && products.length === 0 && !hasSeeded) {
-        setHasSeeded(true); // Mark that we are attempting to seed
+    if (!isLoading && products?.length === 0 && !hasSeedingBeenAttempted) {
+        setHasSeedingBeenAttempted(true);
         startSeedingTransition(async () => {
             toast({
                 title: "Base de Datos Vacía",
@@ -39,9 +37,8 @@ export default function InventoryPage() {
             if (result.success && (result.count ?? 0) > 0) {
                 toast({
                     title: "Migración Completa",
-                    description: `${result.count} productos han sido añadidos a la base de datos. Los datos aparecerán en breve.`,
+                    description: `${result.count} productos han sido añadidos. Los datos aparecerán en breve.`,
                 });
-                // No need to refresh, useCollection will update automatically
             } else if (result.error) {
                 toast({
                     variant: "destructive",
@@ -51,12 +48,12 @@ export default function InventoryPage() {
             } else if (result.count === 0) {
                  toast({
                     title: "Base de Datos ya Poblada",
-                    description: "No se encontraron nuevos productos para migrar.",
+                    description: "No se encontraron nuevos productos para migrar o el archivo está vacío.",
                 });
             }
         });
     }
-  }, [products, isLoading, hasSeeded, toast]);
+  }, [products, isLoading, hasSeedingBeenAttempted, toast]);
 
   if (isLoading || isSeeding) {
     return (
@@ -65,7 +62,7 @@ export default function InventoryPage() {
         <main className="flex flex-1 items-center justify-center">
           <div className="flex flex-col items-center gap-2">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="text-muted-foreground">{isSeeding ? 'Migrando datos...' : 'Cargando inventario...'}</p>
+            <p className="text-muted-foreground">{isSeeding ? 'Migrando datos iniciales...' : 'Cargando inventario...'}</p>
           </div>
         </main>
       </div>
@@ -74,6 +71,15 @@ export default function InventoryPage() {
 
   return (
     <div className="flex flex-1 flex-col">
+        <AppHeader
+            title="Inventario"
+            search={{
+            value: "",
+            onChange: () => {},
+            placeholder: "Buscar por nombre, ID, categoría...",
+            }}
+        >
+        </AppHeader>
         <InventoryClient data={products || []} />
     </div>
   );
