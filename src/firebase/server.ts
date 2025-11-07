@@ -1,9 +1,12 @@
 
+'use server';
+
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
 import { getAuth, signInWithCustomToken } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { headers } from 'next/headers';
+import { experimental_taintObjectReference } from 'react';
 
 // This is a polyfill for the 'atob' function, which is not available in the Node.js server environment.
 if (typeof atob === 'undefined') {
@@ -24,6 +27,7 @@ const parseJwt = (token: string) => {
 
     return JSON.parse(jsonPayload);
   } catch (e) {
+    console.error("Error parsing JWT", e);
     return null;
   }
 };
@@ -41,24 +45,39 @@ export async function getSdks() {
   try {
     const headersList = headers();
     const sessionCookie = headersList.get('x-session-cookie');
-
+    
     if (sessionCookie) {
       // If a session cookie is present, we try to authenticate with it.
       const decodedToken = parseJwt(sessionCookie);
-      if (decodedToken && auth.currentUser?.uid !== decodedToken.uid) {
-        // We sign in with a custom token.
-        // NOTE: In a real production app, you would mint a custom token on your backend
-        // and sign in with that. For this internal tool, we are re-using the session token
-        // for simplicity, but this is not standard practice.
-        await signInWithCustomToken(auth, sessionCookie);
-      }
+      
+      // We sign in with a custom token.
+      // NOTE: In a real production app, you would mint a custom token on your backend
+      // and sign in with that. For this internal tool, we are re-using the session token
+      // for simplicity, but this is not standard practice.
+      await signInWithCustomToken(auth, sessionCookie);
+      
+    } else {
+        // This is a critical failure if no session is found for a server action
+        // that requires auth. We throw to make it clear.
+        throw new Error('Server-side auth error: No session cookie found.');
     }
   } catch (error) {
     console.error('Server-side auth error:', error);
-    // If auth fails, we proceed with an unauthenticated instance.
-    // Security rules will then handle access control.
+    // If auth fails, we should not proceed.
+    // Propagate the error to let the caller handle it.
+    throw error;
   }
   
+  // Mark the returned objects as tainted to prevent them from being passed to the client
+  experimental_taintObjectReference(
+    'Do not pass server-side SDKs to the client!',
+    auth
+  );
+   experimental_taintObjectReference(
+    'Do not pass server-side SDKs to the client!',
+    firestore
+  );
+
   return {
       firebaseApp: app,
       auth: auth,
