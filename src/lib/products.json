@@ -39,6 +39,7 @@
     {
       "id": "12342",
       "name": "Martillo",
+      "sku": "HER-001",
       "category": "Herramientas",
       "location": "Almacen 1",
       "quantity": 2,

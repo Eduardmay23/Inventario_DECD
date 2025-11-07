@@ -67,6 +67,7 @@ export async function seedProducts(): Promise<{ success: boolean; error?: string
         const batch = writeBatch(firestore);
         const productsRef = collection(firestore, 'products');
 
+        let seededCount = 0;
         productsData.products.forEach((product) => {
             if(!product.id) {
                 console.warn(`Skipping product without ID: ${product.name}`);
@@ -74,11 +75,12 @@ export async function seedProducts(): Promise<{ success: boolean; error?: string
             }
             const docRef = doc(productsRef, product.id);
             batch.set(docRef, product);
+            seededCount++;
         });
 
         await batch.commit();
 
-        return { success: true, count: productsData.products.length };
+        return { success: true, count: seededCount };
     } catch (error: any) {
         console.error('Failed to seed products:', error);
         return { success: false, error: error.message || 'An unknown error occurred during seeding.' };

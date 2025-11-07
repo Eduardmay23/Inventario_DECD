@@ -28,7 +28,7 @@ export default function InventoryPage() {
   
   useEffect(() => {
     // Only run this logic once when data has loaded, is empty, and we haven't tried seeding yet.
-    if (!isLoading && products && products.length === 0 && !isSeeding && !hasSeeded) {
+    if (!isLoading && products && products.length === 0 && !hasSeeded) {
         setHasSeeded(true); // Mark that we are attempting to seed
         startSeedingTransition(async () => {
             toast({
@@ -39,7 +39,7 @@ export default function InventoryPage() {
             if (result.success && (result.count ?? 0) > 0) {
                 toast({
                     title: "Migración Completa",
-                    description: `${result.count} productos han sido añadidos a la base de datos. La página se recargará.`,
+                    description: `${result.count} productos han sido añadidos a la base de datos. Los datos aparecerán en breve.`,
                 });
                 // No need to refresh, useCollection will update automatically
             } else if (result.error) {
@@ -48,10 +48,15 @@ export default function InventoryPage() {
                     title: "Error en Migración",
                     description: result.error,
                 });
+            } else if (result.count === 0) {
+                 toast({
+                    title: "Base de Datos ya Poblada",
+                    description: "No se encontraron nuevos productos para migrar.",
+                });
             }
         });
     }
-  }, [products, isLoading, isSeeding, hasSeeded, toast]);
+  }, [products, isLoading, hasSeeded, toast]);
 
   if (isLoading || isSeeding) {
     return (
