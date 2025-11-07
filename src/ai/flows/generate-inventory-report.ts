@@ -26,7 +26,7 @@ const GenerateInventoryReportOutputSchema = z.object({
   }),
   inStock: z.array(z.object({ name: z.string(), quantity: z.number() })).describe('Lista de productos con buena cantidad de stock (cantidad mayor al punto de reorden).'),
   activeLoans: z.array(z.object({ name: z.string(), quantity: z.number(), requester: z.string() })).describe('Lista de productos que están actualmente en préstamo.'),
-  recentMovementsSummary: z.string().describe('Un breve resumen (1-2 frases) de los movimientos y ajustes de stock más significativos o recientes.'),
+  recentMovementsSummary: z.string().describe('Un breve resumen (1-2 frases) de los movimientos y ajustes de stock más significativos o recientes, explicando la razón del último movimiento.'),
 });
 export type GenerateInventoryReportOutput = z.infer<typeof GenerateInventoryReportOutputSchema>;
 
@@ -47,7 +47,7 @@ Analiza los siguientes datos y rellena los campos del schema de salida:
 - **stockAlerts.low**: Identifica productos donde la cantidad es > 0 pero <= reorderPoint.
 - **inStock**: Lista los productos donde la cantidad es > reorderPoint.
 - **activeLoans**: Lista los productos de los préstamos activos.
-- **recentMovementsSummary**: Analiza los movimientos de stock recientes y escribe un resumen de 1 a 2 frases destacando los descuentos más relevantes o curiosos.
+- **recentMovementsSummary**: Analiza los movimientos de stock recientes. Enfócate en el último movimiento registrado. Describe la razón de ese ajuste en 1 o 2 frases. Si no hay movimientos, déjalo vacío.
 
 No inventes información. Si una categoría no tiene productos (ej. no hay productos en nivel crítico), devuelve un array vacío o una cadena vacía.
 
