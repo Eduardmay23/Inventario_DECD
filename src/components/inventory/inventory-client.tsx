@@ -49,7 +49,7 @@ import { EditProductForm } from "./edit-product-form";
 import { AdjustStockForm } from "./adjust-stock-form";
 import { saveProduct, updateProduct, deleteProduct, adjustStock } from "@/app/actions";
 
-export default function InventoryClient({ data, searchQuery }: { data: Product[], searchQuery: string }) {
+export default function InventoryClient({ data, searchQuery, onAddProductClick }: { data: Product[], searchQuery: string, onAddProductClick: () => void; }) {
   const router = useRouter();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -309,11 +309,11 @@ export default function InventoryClient({ data, searchQuery }: { data: Product[]
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Estás absolutamente seguro?</AlertDialogTitle>
+            <AlertDialogTitle>¿Estás absolutely seguro?</AlertDialogTitle>
             <AlertDialogDescription>
               Esta acción no se puede deshacer. Esto eliminará permanentemente el
               producto "{productToDelete?.name}" de tus datos de inventario.
-            </AlertDialogDescription>
+            </d-AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>

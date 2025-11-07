@@ -18,6 +18,7 @@ export default function InventoryPage() {
   const { toast } = useToast();
   const [isSeeding, startSeedingTransition] = useTransition();
   const [hasSeedingBeenAttempted, setHasSeedingBeenAttempted] = useState(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
   const productsRef = useMemoFirebase(() => {
@@ -109,17 +110,17 @@ export default function InventoryPage() {
         }}
       >
         <div className="flex items-center gap-2">
-          <Button size="sm" variant="outline" onClick={handleDownloadCsv}>
+          <Button size="sm" variant="outline" onClick={handleDownloadCsv} disabled={!products || products.length === 0}>
             <Download className="h-4 w-4 mr-2" />
             Descargar CSV
           </Button>
-          <Button size="sm" onClick={() => { /* This needs to trigger the dialog in the client */ }}>
+          <Button size="sm" onClick={() => setIsAddDialogOpen(true)}>
             <PlusCircle className="h-4 w-4 mr-2" />
             Añadir Producto
           </Button>
         </div>
       </AppHeader>
-      <InventoryClient data={products || []} searchQuery={searchQuery} />
+      <InventoryClient data={products || []} searchQuery={searchQuery} onAddProductClick={() => setIsAddDialogOpen(true)} />
     </div>
   );
 }
