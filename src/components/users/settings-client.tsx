@@ -45,9 +45,8 @@ import type { User } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 import { useFirestore, useAuth } from '@/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { doc, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { FirebaseError } from 'firebase/app';
-import { updateUserAction } from '@/actions/users';
 
 type SettingsClientProps = {
   initialUsers: User[];
@@ -120,13 +119,13 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
     setIsEditUserOpen(true);
   };
 
-  const handleUpdateUser = (userId: string, data: Partial<Omit<User, 'id' | 'role' | 'uid'>>) => {
+  const handleUpdateUser = (userId: string, data: Partial<Omit<User, 'id' | 'role' | 'uid' | 'password'>>) => {
      startTransition(async () => {
+        if (!firestore) return;
         try {
-            const result = await updateUserAction(userId, data);
-            if (result.error) {
-                throw new Error(result.error);
-            }
+            const userDocRef = doc(firestore, 'users', userId);
+            await updateDoc(userDocRef, data);
+            
             toast({
                 title: "Usuario Actualizado",
                 description: `Los datos del usuario han sido actualizados.`,
@@ -137,12 +136,11 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
              toast({
                 variant: "destructive",
                 title: "Error al Actualizar",
-                description: error.message || "No se pudo actualizar el usuario.",
+                description: "No se pudo actualizar el perfil del usuario en la base de datos.",
             });
         }
     });
   };
-
 
   const openDeleteDialog = (user: User) => {
     if (user.role === 'admin') {
@@ -290,8 +288,9 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
                 </CardHeader>
                 <CardContent>
                     <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
-                      <li>La creación y edición de usuarios (incluyendo contraseña) se gestiona de forma segura a través de una acción en el servidor.</li>
-                      <li>La eliminación de usuarios solo borra su perfil de la base de datos de Firestore para evitar que se muestre. La cuenta de autenticación subyacente no se elimina para no requerir una re-autenticación compleja por parte del administrador.</li>
+                      <li>La creación de usuarios y la actualización de sus datos se gestiona de forma segura a través del cliente autenticado.</li>
+                      <li>La funcionalidad de cambio de contraseña ha sido eliminada de este panel para simplificar y evitar errores de autenticación. Las contraseñas se establecen al crear el usuario.</li>
+                      <li>La eliminación de usuarios solo borra su perfil de la base de datos de Firestore. La cuenta de autenticación subyacente no se elimina para no requerir una re-autenticación compleja por parte del administrador.</li>
                     </ul>
                 </CardContent>
             </Card>
@@ -317,7 +316,7 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
               <DialogHeader>
                   <DialogTitle>Editar Usuario</DialogTitle>
                   <DialogDescription>
-                      Modifica los detalles del usuario.
+                      Modifica los detalles del perfil del usuario.
                   </DialogDescription>
               </DialogHeader>
               {userToEdit && (

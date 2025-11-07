@@ -31,7 +31,6 @@ const permissions = [
 const formSchema = z.object({
   name: z.string().min(2, "El nombre debe tener al menos 2 caracteres."),
   username: z.string().min(3, "El nombre de usuario debe tener al menos 3 caracteres.").regex(/^[a-zA-Z0-9_]+$/, "Solo se permiten letras, números y guiones bajos (_)."),
-  password: z.string().min(6, "La nueva contraseña debe tener al menos 6 caracteres.").optional().or(z.literal('')),
   permissions: z.array(z.string()).refine(value => value.some(item => item), {
     message: "Debes seleccionar al menos un permiso.",
   }),
@@ -39,7 +38,7 @@ const formSchema = z.object({
 
 type EditUserFormProps = {
   user: User;
-  onSubmit: (data: Partial<Omit<User, 'id' | 'role'>>) => void;
+  onSubmit: (data: Partial<Omit<User, 'id' | 'role' | 'password'>>) => void;
   isPending: boolean;
 };
 
@@ -51,7 +50,6 @@ export function EditUserForm({ user, onSubmit, isPending }: EditUserFormProps) {
     defaultValues: {
       name: user.name || "",
       username: user.username || "",
-      password: "",
       permissions: isAdmin ? permissions.map(p => p.id) : user.permissions || [],
     },
   });
@@ -60,7 +58,6 @@ export function EditUserForm({ user, onSubmit, isPending }: EditUserFormProps) {
     form.reset({
       name: user.name,
       username: user.username,
-      password: "",
       permissions: isAdmin ? permissions.map(p => p.id) : user.permissions,
     });
   }, [user, form, isAdmin]);
@@ -74,11 +71,6 @@ export function EditUserForm({ user, onSubmit, isPending }: EditUserFormProps) {
     if (!isAdmin) {
       dataToSubmit.permissions = values.permissions;
       dataToSubmit.username = values.username;
-    }
-    
-    // Only include password if it's been entered
-    if (values.password && values.password.length > 0) {
-      dataToSubmit.password = values.password;
     }
     
     onSubmit(dataToSubmit);
@@ -110,19 +102,6 @@ export function EditUserForm({ user, onSubmit, isPending }: EditUserFormProps) {
                 <Input placeholder="Ej: juan.perez" {...field} disabled={isAdmin} />
               </FormControl>
               {isAdmin && <FormDescription>El nombre de usuario del administrador no se puede cambiar.</FormDescription>}
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="password"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Nueva Contraseña (Opcional)</FormLabel>
-              <FormControl>
-                <Input type="password" placeholder="Dejar en blanco para no cambiar" {...field} />
-              </FormControl>
               <FormMessage />
             </FormItem>
           )}
