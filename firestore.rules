@@ -43,7 +43,7 @@ service cloud.firestore {
      * @allow create, update, delete: if isSignedIn();
      */
     match /products/{productId} {
-      allow get, list: if true;
+      allow read, list: if true;
       allow create, update, delete: if isSignedIn();
     }
 
