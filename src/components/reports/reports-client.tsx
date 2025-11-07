@@ -2,7 +2,9 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { Bot, Loader2, Package, AlertTriangle, ArrowRightLeft, FileText, MinusSquare } from 'lucide-react';
+import { Bot, Loader2, Package, AlertTriangle, ArrowRightLeft, FileText, MinusSquare, FileSpreadsheet } from 'lucide-react';
+import * as XLSX from "xlsx";
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -86,6 +88,21 @@ export default function ReportsClient({ products, loans, movements }: ReportsCli
   const [report, setReport] = useState<GenerateInventoryReportOutput | null>(null);
   const { toast } = useToast();
 
+  const handleExportExcel = () => {
+    const dataToExport = products.map(product => ({
+      'ID': product.id,
+      'Nombre': product.name,
+      'Categoría': product.category,
+      'Cantidad': product.quantity,
+      'Ubicación': product.location,
+      'Punto de Reorden': product.reorderPoint
+    }));
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Inventario");
+    XLSX.writeFile(workbook, "reporte-inventario.xlsx");
+  };
+
   const handleGenerateReport = () => {
     startTransition(async () => {
       if (products.length === 0) {
@@ -105,6 +122,7 @@ export default function ReportsClient({ products, loans, movements }: ReportsCli
           movementsData: JSON.stringify(movements),
         });
         setReport(result);
+        handleExportExcel(); // Descarga automática del Excel
       } catch (error) {
         console.error("No se pudo generar el reporte:", error);
         toast({
@@ -134,7 +152,7 @@ export default function ReportsClient({ products, loans, movements }: ReportsCli
             <CardTitle>Reporte de Inventario con IA</CardTitle>
           </div>
           <CardDescription>
-            Genera un análisis completo del estado actual de tu inventario, incluyendo alertas de stock bajo y préstamos activos.
+            Genera un análisis completo y descarga un Excel con el estado actual de tu inventario.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -166,7 +184,7 @@ export default function ReportsClient({ products, loans, movements }: ReportsCli
                   <FileText className="h-8 w-8 text-primary" />
                 </div>
                 <p className="max-w-xs text-sm text-muted-foreground">
-                  Haz clic en el botón para que la IA analice todos los productos y préstamos, y genere un reporte ejecutivo.
+                  Haz clic en el botón para que la IA analice todos los productos y préstamos. Se generará un reporte ejecutivo y se descargará un archivo Excel.
                 </p>
                 <Button onClick={handleGenerateReport} disabled={isPending}>
                   {isPending ? (
@@ -175,7 +193,10 @@ export default function ReportsClient({ products, loans, movements }: ReportsCli
                       Analizando y Generando...
                     </>
                   ) : (
-                    'Generar Reporte de Inventario'
+                    <>
+                      <FileSpreadsheet className="mr-2 h-4 w-4" />
+                      Generar Reporte y Excel
+                    </>
                   )}
                 </Button>
               </div>
