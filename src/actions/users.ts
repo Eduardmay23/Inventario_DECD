@@ -1,4 +1,3 @@
-
 'use server';
 
 import { getFirestore } from 'firebase-admin/firestore';
@@ -51,12 +50,14 @@ export async function updateUserAction(uid: string, data: Partial<Omit<User, 'id
 
     return { success: true };
   } catch (error: any) {
-    console.error("Error updating user:", error);
+    console.error("Error updating user:", error); // Log the full error on the server
     let message = 'No se pudo actualizar el usuario.';
-    if (error.code === 'auth/weak-password') {
-      message = 'La contraseña es demasiado débil. Debe tener al menos 6 caracteres.';
-    } else if (error.code === 'auth/user-not-found') {
+    if (error.code === 'auth/user-not-found') {
         message = 'El usuario no fue encontrado en el sistema de autenticación.'
+    } else if (error.code === 'auth/weak-password') {
+      message = 'La contraseña es demasiado débil. Debe tener al menos 6 caracteres.';
+    } else if (error.code === 'auth/invalid-password') {
+        message = 'La contraseña proporcionada no es válida.';
     }
     return { error: message };
   }
