@@ -1,73 +1,45 @@
+'use client';
 
-'use server';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection } from 'firebase/firestore';
+import { Loader2 } from 'lucide-react';
 
 import ReportsClient from '@/components/reports/reports-client';
 import AppHeader from '@/components/header';
 import type { Product, Loan, StockMovement } from '@/lib/types';
-import { promises as fs } from 'fs';
-import path from 'path';
-
-// Estas funciones de lectura de JSON se reemplazarán por lecturas de Firestore
-async function getProducts(): Promise<Product[]> {
-  const filePath = path.join(process.cwd(), 'src', 'lib', 'products.json');
-  try {
-    const data = await fs.readFile(filePath, 'utf-8');
-    const jsonData = JSON.parse(data);
-    return jsonData.products || [];
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-      return [];
-    }
-    console.error('Error reading or parsing products.json:', error);
-    return [];
-  }
-}
-
-async function getLoans(): Promise<Loan[]> {
-  const filePath = path.join(process.cwd(), 'src', 'lib', 'loans.json');
-  try {
-    const data = await fs.readFile(filePath, 'utf-8');
-    const jsonData = JSON.parse(data);
-    return jsonData.loans || [];
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-      return [];
-    }
-    console.error('Error reading or parsing loans.json:', error);
-    return [];
-  }
-}
-
-async function getMovements(): Promise<StockMovement[]> {
-  const filePath = path.join(process.cwd(), 'src', 'lib', 'movements.json');
-  try {
-    const data = await fs.readFile(filePath, 'utf-8');
-    const jsonData = JSON.parse(data);
-    return jsonData.movements || [];
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-      return [];
-    }
-    console.error('Error reading or parsing movements.json:', error);
-    return [];
-  }
-}
 
 
-export default async function ReportsPage() {
-  const products = await getProducts();
-  const loans = await getLoans();
-  const movements = await getMovements();
+export default function ReportsPage() {
+  const firestore = useFirestore();
+
+  const productsRef = useMemoFirebase(() => firestore ? collection(firestore, 'products') : null, [firestore]);
+  const loansRef = useMemoFirebase(() => firestore ? collection(firestore, 'loans') : null, [firestore]);
+  const movementsRef = useMemoFirebase(() => firestore ? collection(firestore, 'movements') : null, [firestore]);
+  
+  const { data: products, isLoading: isLoadingProducts } = useCollection<Product>(productsRef);
+  const { data: loans, isLoading: isLoadingLoans } = useCollection<Loan>(loansRef);
+  const { data: movements, isLoading: isLoadingMovements } = useCollection<StockMovement>(movementsRef);
+
+  const isLoading = isLoadingProducts || isLoadingLoans || isLoadingMovements;
 
   return (
     <div className="flex flex-1 flex-col">
       <AppHeader title="Reportes" />
       <main className="flex-1 p-4 md:p-6">
-        <ReportsClient
-          products={products}
-          loans={loans}
-          movements={movements}
-        />
+        {isLoading ? (
+            <div className="flex flex-1 items-center justify-center pt-24">
+                <div className="flex flex-col items-center gap-2">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <p className="text-muted-foreground">Cargando datos para el reporte...</p>
+                </div>
+            </div>
+        ) : (
+            <ReportsClient
+            products={products || []}
+            loans={loans || []}
+            movements={movements || []}
+            />
+        )}
       </main>
     </div>
   );

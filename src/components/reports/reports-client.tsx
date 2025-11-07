@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useTransition } from 'react';
@@ -87,6 +86,15 @@ export default function ReportsClient({ products, loans, movements }: ReportsCli
 
   const handleGenerateReport = () => {
     startTransition(async () => {
+      if (products.length === 0) {
+        toast({
+          variant: 'destructive',
+          title: 'No hay datos',
+          description: 'No se pueden generar reportes si no hay productos en el inventario.',
+        });
+        return;
+      }
+
       try {
         const activeLoans = loans.filter(loan => loan.status === 'Prestado');
         const result = await generateInventoryReport({
@@ -182,5 +190,3 @@ export default function ReportsClient({ products, loans, movements }: ReportsCli
     </Card>
   );
 }
-
-    

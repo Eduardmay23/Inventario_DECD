@@ -11,14 +11,10 @@
  * - /products/{productId}: Public product information.
  * - /locations/{locationId}: Public location information.
  * - /loans/{loanId}: Loan records.
- * - /products/{productId}/stockLevels/{stockLevelId}: Stock levels for products.
+ * - /movements/{movementId}: Records of stock adjustments.
  * - /users/{userId}: User profile information.
  * - /users/{userId}/stockAlerts/{stockAlertId}: User-specific stock alerts.
- * - /products/{productId}/stockMovements/{stockMovementId}: Stock movement history for a product.
  *
- * Key Security Decisions:
- * - Admins are allowed to update user profiles, while regular users can only update their own.
- * - StockAlerts are strictly user-owned and stored under the /users/{userId} path.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -42,7 +38,7 @@ service cloud.firestore {
       allow get, list: if true;
       allow create, update, delete: if isSignedIn();
     }
-
+    
     /**
      * @description Allows anyone to read location information, but only authenticated users to create, update, or delete locations.
      * @path /locations/{locationId}
@@ -61,12 +57,19 @@ service cloud.firestore {
     }
 
     /**
-     * @description Allows anyone to read stock level information, but only authenticated users to create, update, or delete stock levels.
+     * @description Allows authenticated users to read and write stock movements.
+     * @path /movements/{movementId}
+     */
+    match /movements/{movementId} {
+        allow read, write: if isSignedIn();
+    }
+
+    /**
+     * @description This path is deprecated and no longer used.
      * @path /products/{productId}/stockLevels/{stockLevelId}
      */
     match /products/{productId}/stockLevels/{stockLevelId} {
-      allow read, list: if true;
-      allow create, update, delete: if isSignedIn();
+      allow read, write: if false; // No longer used
     }
 
     /**
@@ -76,14 +79,13 @@ service cloud.firestore {
     match /users/{userId}/stockAlerts/{stockAlertId} {
       allow read, write: if isOwner(userId);
     }
-
+    
     /**
-     * @description Allows anyone to read stock movement information, but only authenticated users to create, update, or delete stock movements.
+     * @description This path is deprecated and no longer used.
      * @path /products/{productId}/stockMovements/{stockMovementId}
      */
     match /products/{productId}/stockMovements/{stockMovementId} {
-      allow read, list: if true;
-      allow create, update, delete: if isSignedIn();
+       allow read, write: if false; // No longer used
     }
 
     // --- Helper functions ---

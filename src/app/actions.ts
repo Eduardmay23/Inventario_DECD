@@ -1,12 +1,10 @@
-
-
 'use server';
 
 import { promises as fs } from 'fs';
 import path from 'path';
 import { z } from 'zod';
 import type { Product, Loan, StockMovement } from '@/lib/types';
-import { collection, writeBatch, doc, getDoc, setDoc, deleteDoc, runTransaction, getDocs, query, where } from 'firebase/firestore';
+import { collection, writeBatch, doc, getDoc, setDoc, deleteDoc, runTransaction, getDocs, query, where, addDoc } from 'firebase/firestore';
 import { getSdks } from '@/firebase/server';
 
 const productSchema = z.object({
@@ -142,7 +140,6 @@ export async function deleteProduct(productId: string): Promise<{ success: boole
     try {
         const { firestore } = getSdks();
         
-        // Before deleting a product, check if there are active loans for it.
         const loansQuery = query(collection(firestore, 'loans'), where('productId', '==', productId), where('status', '==', 'Prestado'));
         const activeLoansSnapshot = await getDocs(loansQuery);
         
@@ -183,12 +180,10 @@ export async function adjustStock(productId: string, adjustmentData: { quantity:
             throw new Error(`Stock insuficiente. Solo hay ${product.quantity} unidades.`);
         }
 
-        // Update product quantity
         const newQuantity = product.quantity - result.data.quantity;
         transaction.update(productRef, { quantity: newQuantity });
 
-        // Record the movement in a subcollection
-        const movementRef = doc(collection(firestore, `products/${productId}/stockMovements`));
+        const movementRef = doc(collection(firestore, `movements`));
         const newMovement: StockMovement = {
             id: movementRef.id,
             productId: product.id,
@@ -265,11 +260,9 @@ export async function saveLoan(loanData: Omit<Loan, 'id' | 'status'>): Promise<{
                 throw new Error(`Stock insuficiente. Solo quedan ${product.quantity} unidades.`);
             }
             
-            // Decrease product quantity
             const newQuantity = product.quantity - result.data.quantity;
             transaction.update(productRef, { quantity: newQuantity });
 
-            // Create loan document
             const newLoan: Loan = {
                 ...result.data,
                 id: newLoanRef.id,
@@ -302,10 +295,9 @@ export async function updateLoanStatus(loanId: string, status: 'Prestado' | 'Dev
 
             const loan = loanDoc.data() as Loan;
             if (loan.status === status) {
-                 return; // No changes needed
+                 return; 
             }
 
-            // Only restock if marking as Returned from Prestado status
             if (status === 'Devuelto' && loan.status === 'Prestado') {
                 const productRef = doc(firestore, 'products', loan.productId);
                 const productDoc = await transaction.get(productRef);
