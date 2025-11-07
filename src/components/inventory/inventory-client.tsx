@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useMemo, useTransition } from "react";
@@ -309,11 +308,11 @@ export default function InventoryClient({ data, searchQuery, onAddProductClick }
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Estás absolutely seguro?</AlertDialogTitle>
+            <AlertDialogTitle>¿Estás absolutamente seguro?</AlertDialogTitle>
             <AlertDialogDescription>
               Esta acción no se puede deshacer. Esto eliminará permanentemente el
               producto "{productToDelete?.name}" de tus datos de inventario.
-            </d-AlertDialogDescription>
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
