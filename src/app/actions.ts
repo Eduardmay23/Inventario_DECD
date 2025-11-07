@@ -362,5 +362,3 @@ export async function deleteLoan(loanId: string): Promise<{ success: boolean; er
         return { success: false, error: e.message || 'Ocurrió un error desconocido.' };
     }
 }
-
-    
