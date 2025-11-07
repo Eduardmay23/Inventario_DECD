@@ -4,8 +4,10 @@
 import { useState, useMemo, useTransition } from "react";
 import { Edit, MoreHorizontal, Trash2, MinusCircle, PlusCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { doc, setDoc, deleteDoc, writeBatch, collection, runTransaction, getDocs, query, where, getDoc } from 'firebase/firestore';
 
-import type { Product } from "@/lib/types";
+import type { Product, StockMovement } from "@/lib/types";
+import { useFirestore } from '@/firebase';
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -46,10 +48,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { AddProductForm } from "./add-product-form";
 import { EditProductForm } from "./edit-product-form";
 import { AdjustStockForm } from "./adjust-stock-form";
-import { saveProduct, updateProduct, deleteProduct, adjustStock } from "@/app/actions";
+import AppHeader from "../header";
 
-export default function InventoryClient({ data, searchQuery, onAddProductClick, isAddDialogOpen, setIsAddDialogOpen }: { data: Product[], searchQuery: string, onAddProductClick: () => void, isAddDialogOpen: boolean, setIsAddDialogOpen: (isOpen: boolean) => void; }) {
+
+export default function InventoryClient({ data, searchQuery }: { data: Product[], searchQuery: string }) {
   const router = useRouter();
+  const firestore = useFirestore();
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAdjustDialogOpen, setIsAdjustDialogOpen] = useState(false);
@@ -75,65 +80,93 @@ export default function InventoryClient({ data, searchQuery, onAddProductClick, 
   };
 
   const confirmDelete = () => {
-    if (productToDelete) {
+    if (productToDelete && firestore) {
       startTransition(async () => {
-        const result = await deleteProduct(productToDelete.id);
-        if (result?.success) {
-          toast({
-            title: "Producto Eliminado",
-            description: `El producto "${productToDelete.name}" ha sido eliminado.`,
-          });
-          router.refresh();
-        } else if (result) {
+        try {
+            const loansQuery = query(collection(firestore, 'loans'), where('productId', '==', productToDelete.id), where('status', '==', 'Prestado'));
+            const activeLoansSnapshot = await getDocs(loansQuery);
+            
+            if (!activeLoansSnapshot.empty) {
+                toast({
+                    variant: "destructive",
+                    title: "Error al Eliminar",
+                    description: `No se puede eliminar. Hay ${activeLoansSnapshot.size} préstamo(s) activo(s) para este producto.`,
+                });
+                return;
+            }
+    
+            const productRef = doc(firestore, 'products', productToDelete.id);
+            await deleteDoc(productRef);
+
+            toast({
+                title: "Producto Eliminado",
+                description: `El producto "${productToDelete.name}" ha sido eliminado.`,
+            });
+            router.refresh();
+        } catch (error: any) {
           toast({
             variant: "destructive",
             title: "Error al Eliminar",
-            description: result.error || "No se pudo eliminar el producto.",
+            description: error.message || "No se pudo eliminar el producto.",
           });
+        } finally {
+            setIsDeleteDialogOpen(false);
+            setProductToDelete(null);
         }
-        setIsDeleteDialogOpen(false);
-        setProductToDelete(null);
       });
     }
   };
   
   const handleAddProduct = (newProductData: Product) => {
+     if (!firestore) return;
     startTransition(async () => {
-      const result = await saveProduct(newProductData);
-      if (result?.success) {
+      try {
+        const productRef = doc(firestore, 'products', newProductData.id);
+        const docSnap = await getDoc(productRef);
+        if (docSnap.exists()) {
+            toast({
+                variant: "destructive",
+                title: "Error al Guardar",
+                description: 'Este ID de producto ya existe. Por favor, utiliza uno único.',
+            });
+            return;
+        }
+
+        await setDoc(productRef, newProductData);
         toast({
           title: "Producto Añadido",
           description: `El producto "${newProductData.name}" ha sido guardado.`,
         });
         setIsAddDialogOpen(false);
         router.refresh();
-      } else if (result) {
+      } catch (error: any) {
         toast({
           variant: "destructive",
           title: "Error al Guardar",
-          description: result.error || "No se pudo guardar el producto.",
+          description: error.message || "No se pudo guardar el producto.",
         });
       }
     });
   };
 
   const handleEditProduct = (editedProductData: Partial<Omit<Product, 'id'>>) => {
-    if (productToEdit) {
+    if (productToEdit && firestore) {
       startTransition(async () => {
-        const result = await updateProduct(productToEdit.id, editedProductData);
-        if (result?.success && result.data) {
-          toast({
-            title: "Producto Actualizado",
-            description: `El producto "${result.data.name}" ha sido actualizado.`,
-          });
-          setIsEditDialogOpen(false);
-          setProductToEdit(null);
-          router.refresh();
-        } else if (result) {
+        try {
+            const productRef = doc(firestore, 'products', productToEdit.id);
+            await setDoc(productRef, editedProductData, { merge: true });
+            toast({
+                title: "Producto Actualizado",
+                description: `El producto ha sido actualizado.`,
+            });
+            setIsEditDialogOpen(false);
+            setProductToEdit(null);
+            router.refresh();
+        } catch (error: any) {
           toast({
             variant: "destructive",
             title: "Error al Actualizar",
-            description: result.error || "No se pudo actualizar el producto.",
+            description: error.message || "No se pudo actualizar el producto.",
           });
         }
       });
@@ -141,22 +174,49 @@ export default function InventoryClient({ data, searchQuery, onAddProductClick, 
   };
 
   const handleAdjustStock = (adjustmentData: { quantity: number, reason: string }) => {
-    if (productToAdjust) {
+    if (productToAdjust && firestore) {
       startTransition(async () => {
-        const result = await adjustStock(productToAdjust.id, adjustmentData);
-        if (result?.success) {
-          toast({
-            title: "Stock Ajustado",
-            description: `Se descontaron ${adjustmentData.quantity} unidades de "${productToAdjust.name}".`,
-          });
-          setIsAdjustDialogOpen(false);
-          setProductToAdjust(null);
-          router.refresh();
-        } else if (result) {
+        try {
+            const productRef = doc(firestore, 'products', productToAdjust.id);
+            await runTransaction(firestore, async (transaction) => {
+                const productDoc = await transaction.get(productRef);
+                if (!productDoc.exists()) {
+                    throw new Error("No se encontró el producto.");
+                }
+
+                const product = productDoc.data() as Product;
+                if (adjustmentData.quantity > product.quantity) {
+                    throw new Error(`Stock insuficiente. Solo hay ${product.quantity} unidades.`);
+                }
+
+                const newQuantity = product.quantity - adjustmentData.quantity;
+                transaction.update(productRef, { quantity: newQuantity });
+
+                const movementRef = doc(collection(firestore, `movements`));
+                const newMovement: StockMovement = {
+                    id: movementRef.id,
+                    productId: product.id,
+                    productName: product.name,
+                    quantity: adjustmentData.quantity,
+                    type: 'descuento',
+                    reason: adjustmentData.reason,
+                    date: new Date().toISOString(),
+                };
+                transaction.set(movementRef, newMovement);
+            });
+
+            toast({
+                title: "Stock Ajustado",
+                description: `Se descontaron ${adjustmentData.quantity} unidades de "${productToAdjust.name}".`,
+            });
+            setIsAdjustDialogOpen(false);
+            setProductToAdjust(null);
+            router.refresh();
+        } catch (error: any) {
           toast({
             variant: "destructive",
             title: "Error al Ajustar",
-            description: result.error || "No se pudo ajustar el stock.",
+            description: error.message || "No se pudo ajustar el stock.",
           });
         }
       });
@@ -183,8 +243,16 @@ export default function InventoryClient({ data, searchQuery, onAddProductClick, 
       <main className="flex-1 p-4 md:p-6">
         <Card>
             <CardHeader>
-                <CardTitle>Todos los Productos</CardTitle>
-                <CardDescription>Gestiona tus productos y sus niveles de stock.</CardDescription>
+                <div className="flex items-center justify-between">
+                    <div>
+                        <CardTitle>Todos los Productos</CardTitle>
+                        <CardDescription>Gestiona tus productos y sus niveles de stock.</CardDescription>
+                    </div>
+                     <Button size="sm" onClick={() => setIsAddDialogOpen(true)}>
+                        <PlusCircle className="h-4 w-4 mr-2" />
+                        Añadir Producto
+                    </Button>
+                </div>
             </CardHeader>
             <CardContent>
                 <div className="overflow-x-auto">
@@ -259,7 +327,7 @@ export default function InventoryClient({ data, searchQuery, onAddProductClick, 
                             <TableCell colSpan={7} className="h-24 text-center">
                               <div className="flex flex-col items-center gap-2">
                                 <p>No se encontraron productos.</p>
-                                <Button size="sm" variant="outline" onClick={onAddProductClick}>
+                                <Button size="sm" variant="outline" onClick={() => setIsAddDialogOpen(true)}>
                                   <PlusCircle className="mr-2 h-4 w-4" />
                                   Añadir el primero
                                 </Button>
@@ -313,7 +381,7 @@ export default function InventoryClient({ data, searchQuery, onAddProductClick, 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Estás absolutely seguro?</AlertDialogTitle>
+            <AlertDialogTitle>¿Estás absolutamente seguro?</AlertDialogTitle>
             <AlertDialogDescription>
               Esta acción no se puede deshacer. Esto eliminará permanentemente el
               producto "{productToDelete?.name}" de tus datos de inventario.
@@ -322,7 +390,7 @@ export default function InventoryClient({ data, searchQuery, onAddProductClick, 
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={confirmDelete} disabled={isPending} className="bg-destructive hover:bg-destructive/90">
-              Eliminar
+              {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Eliminar"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

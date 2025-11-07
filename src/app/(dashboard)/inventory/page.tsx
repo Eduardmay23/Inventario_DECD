@@ -2,7 +2,7 @@
 'use client';
 
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { collection, writeBatch } from 'firebase/firestore';
 import { Loader2, PlusCircle, Download, Trash2 } from 'lucide-react';
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
@@ -12,7 +12,6 @@ import AppHeader from '@/components/header';
 import type { Product } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { deleteAllData } from '@/app/actions';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,11 +27,9 @@ export default function InventoryPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const router = useRouter();
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isPending, startTransition] = useTransition();
   const [isDeleteAllDialogOpen, setIsDeleteAllDialogOpen] = useState(false);
-
 
   const productsRef = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -42,22 +39,36 @@ export default function InventoryPage() {
   const { data: products, isLoading } = useCollection<Product>(productsRef);
 
   const confirmDeleteAll = () => {
+    if (!firestore || !products || products.length === 0) return;
+
     startTransition(async () => {
-        const result = await deleteAllData();
-        if (result.success) {
+        const batch = writeBatch(firestore);
+        
+        const productsSnapshot = await getDocs(collection(firestore, 'products'));
+        productsSnapshot.forEach(doc => batch.delete(doc.ref));
+
+        const loansSnapshot = await getDocs(collection(firestore, 'loans'));
+        loansSnapshot.forEach(doc => batch.delete(doc.ref));
+
+        const movementsSnapshot = await getDocs(collection(firestore, 'movements'));
+        movementsSnapshot.forEach(doc => batch.delete(doc.ref));
+
+        try {
+            await batch.commit();
             toast({
                 title: "Datos Eliminados",
                 description: "Se han borrado todos los productos, préstamos y movimientos.",
             });
             router.refresh();
-        } else {
-            toast({
+        } catch(error: any) {
+             toast({
                 variant: "destructive",
                 title: "Error al Eliminar",
-                description: result.error || "No se pudo completar la operación.",
+                description: error.message || "No se pudo completar la operación.",
             });
+        } finally {
+            setIsDeleteAllDialogOpen(false);
         }
-        setIsDeleteAllDialogOpen(false);
     });
   };
 
@@ -113,41 +124,9 @@ export default function InventoryPage() {
             placeholder: "Buscar por nombre, ID, categoría...",
           }}
         >
-          <div className="flex items-center gap-2">
-            <Button variant="destructive" size="sm" onClick={() => setIsDeleteAllDialogOpen(true)} disabled={isPending || !products || products.length === 0}>
-                <Trash2 className="h-4 w-4 mr-2" />
-                Eliminar Todo
-            </Button>
-            <Button size="sm" variant="outline" onClick={handleDownloadCsv} disabled={!products || products.length === 0}>
-              <Download className="h-4 w-4 mr-2" />
-              Descargar CSV
-            </Button>
-            <Button size="sm" onClick={() => setIsAddDialogOpen(true)}>
-              <PlusCircle className="h-4 w-4 mr-2" />
-              Añadir Producto
-            </Button>
-          </div>
         </AppHeader>
-        <InventoryClient data={products || []} searchQuery={searchQuery} onAddProductClick={() => setIsAddDialogOpen(true)} isAddDialogOpen={isAddDialogOpen} setIsAddDialogOpen={setIsAddDialogOpen} />
+        <InventoryClient data={products || []} searchQuery={searchQuery} />
       </div>
-
-       <AlertDialog open={isDeleteAllDialogOpen} onOpenChange={setIsDeleteAllDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>¿Estás absolutamente seguro?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta acción es irreversible y eliminará permanentemente TODOS los productos, préstamos y movimientos registrados en la base de datos.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDeleteAll} disabled={isPending} className="bg-destructive hover:bg-destructive/90">
-              {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Sí, eliminar todo
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 }
