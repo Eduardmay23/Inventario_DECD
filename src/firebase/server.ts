@@ -5,7 +5,6 @@ import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, signInWithCustomToken } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
-import { experimental_taintObjectReference } from 'react';
 import { headers } from 'next/headers';
 
 // Este polyfill es necesario para el entorno de servidor de Node.js.
@@ -39,16 +38,6 @@ export async function getSdks() {
     throw error;
   }
   
-  // Marca los objetos para evitar que se envíen al cliente.
-  experimental_taintObjectReference(
-    'Do not pass server-side SDKs to the client!',
-    auth
-  );
-   experimental_taintObjectReference(
-    'Do not pass server-side SDKs to the client!',
-    firestore
-  );
-
   return {
       firebaseApp: app,
       auth: auth,
