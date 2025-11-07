@@ -136,22 +136,20 @@ export default function ReportsClient({ products, loans, movements }: ReportsCli
             <div className="rounded-md border bg-muted/30 p-4 leading-relaxed report-printable-area">
               <ReportViewer report={report} />
             </div>
-            <div className="flex w-full items-center justify-between print-hide">
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={handleCloseReport}>
-                  Cerrar
-                </Button>
-                <Button size="sm" onClick={handleRegenerateReport} disabled={isPending}>
-                  {isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Generando...
-                    </>
-                  ) : (
-                    'Volver a Generar'
-                  )}
-                </Button>
-              </div>
+            <div className="flex w-full items-center justify-start gap-4 print-hide">
+              <Button variant="outline" size="sm" onClick={handleCloseReport}>
+                Cerrar
+              </Button>
+              <Button size="sm" onClick={handleRegenerateReport} disabled={isPending}>
+                {isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Generando...
+                  </>
+                ) : (
+                  'Volver a Generar'
+                )}
+              </Button>
               <Button size="sm" onClick={handlePrint} variant="default">
                 <Printer className="mr-2 h-4 w-4" />
                 Imprimir Reporte
