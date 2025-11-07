@@ -48,10 +48,9 @@ import { EditProductForm } from "./edit-product-form";
 import { AdjustStockForm } from "./adjust-stock-form";
 import { saveProduct, updateProduct, deleteProduct, adjustStock } from "@/app/actions";
 
-export default function InventoryClient({ data, searchQuery, onAddProductClick }: { data: Product[], searchQuery: string, onAddProductClick: () => void; }) {
+export default function InventoryClient({ data, searchQuery, onAddProductClick, isAddDialogOpen, setIsAddDialogOpen }: { data: Product[], searchQuery: string, onAddProductClick: () => void, isAddDialogOpen: boolean, setIsAddDialogOpen: (isOpen: boolean) => void; }) {
   const router = useRouter();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAdjustDialogOpen, setIsAdjustDialogOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);

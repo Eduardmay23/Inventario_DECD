@@ -120,7 +120,7 @@ export default function InventoryPage() {
           </Button>
         </div>
       </AppHeader>
-      <InventoryClient data={products || []} searchQuery={searchQuery} onAddProductClick={() => setIsAddDialogOpen(true)} />
+      <InventoryClient data={products || []} searchQuery={searchQuery} onAddProductClick={() => setIsAddDialogOpen(true)} isAddDialogOpen={isAddDialogOpen} setIsAddDialogOpen={setIsAddDialogOpen} />
     </div>
   );
 }
