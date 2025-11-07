@@ -14,7 +14,7 @@ const productSchema = z.object({
     category: z.string().min(2, "La categoría debe tener al menos 2 caracteres."),
     location: z.string().min(2, "La ubicación debe tener al menos 2 caracteres."),
     quantity: z.coerce.number().int().min(0, "La cantidad no puede ser negativa."),
-    reorderPoint: z.coerce.number().int().min(0, "El punto de reorden no puede ser negativo."),
+    reorderPoint: z.coerce.number().int().min(0, "El punto de reorden no puede ser negativa."),
 });
 
 const loanSchema = z.object({
@@ -107,7 +107,7 @@ export async function saveProduct(newProduct: Product): Promise<{ success: boole
     
     const docSnap = await getDoc(productRef);
     if (docSnap.exists()) {
-        throw new Error('Este ID de producto ya existe. Por favor, utiliza uno único.');
+        return { success: false, error: 'Este ID de producto ya existe. Por favor, utiliza uno único.' };
     }
 
     await setDoc(productRef, result.data);
@@ -116,7 +116,7 @@ export async function saveProduct(newProduct: Product): Promise<{ success: boole
 
   } catch (error: any) {
     console.error('Failed to save product to Firestore:', error);
-    return { success: false, error: error.message || 'An unknown error occurred' };
+    return { success: false, error: error.message || 'No se pudo guardar el producto. Revisa los permisos.' };
   }
 }
 
@@ -362,3 +362,5 @@ export async function deleteLoan(loanId: string): Promise<{ success: boolean; er
         return { success: false, error: e.message || 'Ocurrió un error desconocido.' };
     }
 }
+
+    

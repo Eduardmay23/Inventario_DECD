@@ -313,7 +313,7 @@ export default function InventoryClient({ data, searchQuery, onAddProductClick, 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Estás absolutamente seguro?</AlertDialogTitle>
+            <AlertDialogTitle>¿Estás absolutely seguro?</AlertDialogTitle>
             <AlertDialogDescription>
               Esta acción no se puede deshacer. Esto eliminará permanentemente el
               producto "{productToDelete?.name}" de tus datos de inventario.
@@ -330,3 +330,5 @@ export default function InventoryClient({ data, searchQuery, onAddProductClick, 
     </>
   );
 }
+
+    
