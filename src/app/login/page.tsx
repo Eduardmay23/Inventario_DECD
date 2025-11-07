@@ -18,14 +18,14 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useAuth, useFirestore } from '@/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { FirebaseError } from 'firebase/app';
-import { doc, setDoc, getDocs, collection } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 
 
 const DUMMY_DOMAIN = 'stockwise.local';
 
 async function createInitialUsers(auth: any, firestore: any) {
     try {
-        // Create admin user
+        // Attempt to create admin user
         const { user: adminAuthUser } = await createUserWithEmailAndPassword(auth, `admin@${DUMMY_DOMAIN}`, 'password123');
         const adminUserDoc = {
             uid: adminAuthUser.uid,
@@ -35,8 +35,14 @@ async function createInitialUsers(auth: any, firestore: any) {
             permissions: ['dashboard', 'inventory', 'loans', 'reports', 'settings'],
         };
         await setDoc(doc(firestore, "users", adminAuthUser.uid), adminUserDoc);
+    } catch (error: any) {
+        if (error.code !== 'auth/email-already-in-use') {
+             console.error("Error creating admin user:", error);
+        }
+    }
 
-        // Create test user 'pedro'
+    try {
+        // Attempt to create test user 'pedro'
         const { user: pedroAuthUser } = await createUserWithEmailAndPassword(auth, `pedro@${DUMMY_DOMAIN}`, '123456');
         const pedroUserDoc = {
             uid: pedroAuthUser.uid,
@@ -46,12 +52,10 @@ async function createInitialUsers(auth: any, firestore: any) {
             permissions: ['dashboard', 'inventory', 'loans'],
         };
         await setDoc(doc(firestore, "users", pedroAuthUser.uid), pedroUserDoc);
-
-        return true; // Indicate that initial users were created
-    } catch (error) {
-        console.error("Error creating initial users:", error);
-        // This might fail if users already exist, which is okay.
-        return false;
+    } catch (error: any) {
+        if (error.code !== 'auth/email-already-in-use') {
+             console.error("Error creating pedro user:", error);
+        }
     }
 }
 
@@ -80,20 +84,11 @@ export default function LoginPage() {
     const email = `${username}@${DUMMY_DOMAIN}`;
 
     try {
-      // Check if any users exist in Firestore
-      const usersSnapshot = await getDocs(collection(firestore, 'users'));
-      if (usersSnapshot.empty) {
-          // If no users exist, create the initial set
-          const usersCreated = await createInitialUsers(auth, firestore);
-          if (usersCreated) {
-             // Try to sign in the user who just tried to log in
-             await signInWithEmailAndPassword(auth, email, password);
-             router.replace('/dashboard');
-             return;
-          }
-      }
+      // First, silently attempt to create the initial users.
+      // This will only succeed the very first time and will fail silently if they already exist.
+      await createInitialUsers(auth, firestore);
       
-      // Default sign-in attempt
+      // After ensuring users might exist, always attempt to sign in.
       await signInWithEmailAndPassword(auth, email, password);
       router.replace('/dashboard');
 
@@ -176,7 +171,7 @@ export default function LoginPage() {
           </CardContent>
         </Card>
         <p className="px-8 text-center text-sm text-muted-foreground">
-          La primera vez que uses la app, se crearán los usuarios 'admin' y 'pedro'.
+          Usuarios de prueba: <strong>admin</strong> (pass: password123) y <strong>pedro</strong> (pass: 123456).
         </p>
       </div>
     </main>
