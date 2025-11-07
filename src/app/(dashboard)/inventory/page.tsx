@@ -1,31 +1,38 @@
 
+'use client';
+
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection } from 'firebase/firestore';
+import { Loader2 } from 'lucide-react';
+
 import InventoryClient from "@/components/inventory/inventory-client";
-import { promises as fs } from 'fs';
-import path from 'path';
+import AppHeader from '@/components/header';
 import type { Product } from '@/lib/types';
 
-async function getProducts(): Promise<Product[]> {
-  const filePath = path.join(process.cwd(), 'src', 'lib', 'products.json');
-  try {
-    const data = await fs.readFile(filePath, 'utf-8');
-    const jsonData = JSON.parse(data);
-    return jsonData.products || [];
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-      // If the file doesn't exist, return an empty array.
-      return [];
-    }
-    console.error('Error reading or parsing products.json:', error);
-    return [];
-  }
-}
+export default function InventoryPage() {
+  const firestore = useFirestore();
 
-export default async function InventoryPage() {
-  const products = await getProducts();
+  const productsRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'products');
+  }, [firestore]);
+
+  const { data: products, isLoading } = useCollection<Product>(productsRef);
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-1 flex-col">
+        <AppHeader title="Inventario" />
+        <main className="flex flex-1 items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-1 flex-col">
-        <InventoryClient data={products} />
+        <InventoryClient data={products || []} />
     </div>
   );
 }
