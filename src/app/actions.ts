@@ -1,9 +1,6 @@
 
 'use server';
 
-import { headers } from 'next/headers';
-import { promises as fs } from 'fs';
-import path from 'path';
 import { z } from 'zod';
 import type { Product, Loan, StockMovement, User } from '@/lib/types';
 import { collection, writeBatch, doc, getDoc, setDoc, deleteDoc, runTransaction, getDocs, query, where } from 'firebase/firestore';
@@ -32,72 +29,6 @@ const stockAdjustmentSchema = z.object({
   reason: z.string().min(3, "La razón debe tener al menos 3 caracteres."),
 });
 
-
-// JSON file paths
-const productsFilePath = path.join(process.cwd(), 'src', 'lib', 'data', 'products.json');
-const loansFilePath = path.join(process.cwd(), 'src', 'lib', 'data', 'loans.json');
-
-
-async function getAuthenticatedSdks() {
-    return getSdks();
-}
-
-
-// HELPERS
-async function readData<T>(filePath: string): Promise<T | null> {
-    try {
-        const data = await fs.readFile(filePath, 'utf-8');
-        return JSON.parse(data);
-    } catch (error) {
-        if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-             console.warn(`File not found, skipping seed: ${filePath}`);
-             return null;
-        }
-        console.error(`Error reading ${filePath}:`, error);
-        return null;
-    }
-}
-
-// PRODUCT SEEDING ACTION
-export async function seedProducts(): Promise<{ success: boolean; error?: string; count?: number }> {
-    const { firestore } = await getSdks();
-    try {
-        const productsData = await readData<{ products: Product[] }>(productsFilePath);
-
-        if (!productsData || !productsData.products || productsData.products.length === 0) {
-            return { success: true, count: 0 };
-        }
-
-        const batch = writeBatch(firestore);
-        const productsRef = collection(firestore, 'products');
-
-        let seededCount = 0;
-        for (const product of productsData.products) {
-            if(!product.id) {
-                console.warn(`Skipping product without ID: ${product.name}`);
-                continue;
-            }
-            // Check if product already exists
-            const docRef = doc(productsRef, product.id);
-            const docSnap = await getDoc(docRef);
-            if (!docSnap.exists()) {
-                batch.set(docRef, product);
-                seededCount++;
-            }
-        }
-        
-        if (seededCount > 0) {
-          await batch.commit();
-        }
-
-        return { success: true, count: seededCount };
-    } catch (error: any) {
-        console.error('Failed to seed products:', error);
-        return { success: false, error: error.message || 'An unknown error occurred during seeding.' };
-    }
-}
-
-
 // PRODUCT ACTIONS
 export async function saveProduct(newProduct: Product): Promise<{ success: boolean, error?: string, data?: Product }> {
   const result = productSchema.safeParse(newProduct);
@@ -108,7 +39,7 @@ export async function saveProduct(newProduct: Product): Promise<{ success: boole
   }
   
   try {
-    const { firestore } = await getAuthenticatedSdks();
+    const { firestore } = await getSdks();
     const productRef = doc(firestore, 'products', result.data.id);
     
     const docSnap = await getDoc(productRef);
@@ -140,7 +71,7 @@ export async function updateProduct(productId: string, updatedData: Partial<Omit
     }
 
     try {
-        const { firestore } = await getAuthenticatedSdks();
+        const { firestore } = await getSdks();
         const productRef = doc(firestore, 'products', productId);
 
         await setDoc(productRef, result.data, { merge: true });
@@ -157,7 +88,7 @@ export async function updateProduct(productId: string, updatedData: Partial<Omit
 
 export async function deleteProduct(productId: string): Promise<{ success: boolean; error?: string; }> {
     try {
-        const { firestore } = await getAuthenticatedSdks();
+        const { firestore } = await getSdks();
         const loansQuery = query(collection(firestore, 'loans'), where('productId', '==', productId), where('status', '==', 'Prestado'));
         const activeLoansSnapshot = await getDocs(loansQuery);
         
@@ -184,7 +115,7 @@ export async function adjustStock(productId: string, adjustmentData: { quantity:
   }
 
   try {
-    const { firestore } = await getAuthenticatedSdks();
+    const { firestore } = await getSdks();
     const productRef = doc(firestore, 'products', productId);
     
     await runTransaction(firestore, async (transaction) => {
@@ -222,46 +153,6 @@ export async function adjustStock(productId: string, adjustmentData: { quantity:
   }
 }
 
-
-// LOAN SEEDING ACTION
-export async function seedLoans(): Promise<{ success: boolean; error?: string; count?: number }> {
-    const { firestore } = await getSdks();
-    try {
-        const loansData = await readData<{ loans: Loan[] }>(loansFilePath);
-
-        if (!loansData || !loansData.loans || loansData.loans.length === 0) {
-            return { success: true, count: 0 };
-        }
-
-        const batch = writeBatch(firestore);
-        const loansRef = collection(firestore, 'loans');
-
-        let seededCount = 0;
-        for (const loan of loansData.loans) {
-            if(!loan.id) {
-                 console.warn(`Skipping loan without ID for product: ${loan.productName}`);
-                 continue;
-            }
-            const docRef = doc(loansRef, loan.id);
-            const docSnap = await getDoc(docRef);
-            if (!docSnap.exists()) {
-                batch.set(docRef, loan);
-                seededCount++;
-            }
-        }
-        
-        if (seededCount > 0) {
-            await batch.commit();
-        }
-
-        return { success: true, count: seededCount };
-    } catch (error: any) {
-        console.error('Failed to seed loans:', error);
-        return { success: false, error: error.message || 'An unknown error occurred during seeding.' };
-    }
-}
-
-
 // LOAN ACTIONS
 export async function saveLoan(loan: Omit<Loan, 'id' | 'status'>): Promise<{ success: boolean; error?: string; data?: Loan }> {
     const newLoanData = {
@@ -270,7 +161,7 @@ export async function saveLoan(loan: Omit<Loan, 'id' | 'status'>): Promise<{ suc
     };
 
     try {
-        const { firestore } = await getAuthenticatedSdks();
+        const { firestore } = await getSdks();
         const productRef = doc(firestore, 'products', loan.productId);
         const loanRef = doc(collection(firestore, 'loans'));
 
@@ -305,7 +196,7 @@ export async function updateLoanStatus(loanId: string, status: 'Devuelto'): Prom
     }
 
     try {
-        const { firestore } = await getAuthenticatedSdks();
+        const { firestore } = await getSdks();
         const loanRef = doc(firestore, 'loans', loanId);
 
         await runTransaction(firestore, async (transaction) => {
@@ -335,7 +226,7 @@ export async function updateLoanStatus(loanId: string, status: 'Devuelto'): Prom
 
 export async function deleteLoan(loanId: string): Promise<{ success: boolean; error?: string; }> {
     try {
-        const { firestore } = await getAuthenticatedSdks();
+        const { firestore } = await getSdks();
         const loanRef = doc(firestore, 'loans', loanId);
         
         const loanSnap = await getDoc(loanRef);
@@ -351,10 +242,9 @@ export async function deleteLoan(loanId: string): Promise<{ success: boolean; er
     }
 }
 
-
 export async function deleteAllProductsAndData(): Promise<{ success: boolean; error?: string }> {
   try {
-    const { firestore } = await getAuthenticatedSdks();
+    const { firestore } = await getSdks();
 
     // Delete all collections in parallel
     await Promise.all([
