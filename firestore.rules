@@ -3,13 +3,12 @@
  * @fileoverview Firestore Security Rules for StockWise.
  *
  * Core Philosophy:
- * This ruleset enforces a hybrid security model. Core data (Products, Locations, Loans, Movements)
- * is publicly readable but writable only by authenticated users. User-specific
- * data (profiles) is strictly managed by admins or the user themselves.
+ * This ruleset enforces a straightforward security model suitable for an internal
+ * admin-like application. All authenticated users are treated as trusted operators.
  *
  * Data Structure:
- * - /products/{productId}: Public product information.
- * - /locations/{locationId}: Public location information.
+ * - /products/{productId}: Product information.
+ * - /locations/{locationId}: Location information.
  * - /loans/{loanId}: Loan records.
  * - /movements/{movementId}: Records of stock adjustments.
  * - /users/{userId}: User profile information.
@@ -94,3 +93,5 @@ service cloud.firestore {
     }
   }
 }
+
+    
