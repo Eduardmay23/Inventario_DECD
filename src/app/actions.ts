@@ -6,6 +6,8 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { z } from 'zod';
 import type { Product, Loan, StockMovement } from '@/lib/types';
+import { getFirestore, collection, writeBatch } from 'firebase/firestore';
+import { getSdks } from '@/firebase/server';
 
 const productSchema = z.object({
     id: z.string().min(1, "El ID es obligatorio."),
@@ -51,6 +53,34 @@ async function readData<T>(filePath: string, defaultData: T): Promise<T> {
 async function writeData<T>(filePath: string, data: T): Promise<void> {
     await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8');
 }
+
+// PRODUCT SEEDING ACTION
+export async function seedProducts(): Promise<{ success: boolean; error?: string; count?: number }> {
+    try {
+        const { firestore } = getSdks();
+        const productsData = await readData<{ products: Product[] }>(productsFilePath, { products: [] });
+
+        if (!productsData.products || productsData.products.length === 0) {
+            return { success: true, count: 0 };
+        }
+
+        const batch = writeBatch(firestore);
+        const productsRef = collection(firestore, 'products');
+
+        productsData.products.forEach((product) => {
+            const docRef = doc(productsRef, product.id);
+            batch.set(docRef, product);
+        });
+
+        await batch.commit();
+
+        return { success: true, count: productsData.products.length };
+    } catch (error: any) {
+        console.error('Failed to seed products:', error);
+        return { success: false, error: error.message || 'An unknown error occurred during seeding.' };
+    }
+}
+
 
 // PRODUCT ACTIONS
 export async function saveProduct(newProduct: Product): Promise<{ success: boolean, error?: string, data?: Product }> {
