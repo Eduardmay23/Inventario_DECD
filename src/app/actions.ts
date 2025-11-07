@@ -38,10 +38,7 @@ const productsFilePath = path.join(process.cwd(), 'src', 'lib', 'data', 'product
 const loansFilePath = path.join(process.cwd(), 'src', 'lib', 'data', 'loans.json');
 
 
-async function getAuthenticatedSdks(actionName: string) {
-    const mutableHeaders = headers();
-    mutableHeaders.set('x-action-from-client', 'true');
-    mutableHeaders.set('x-action-name', actionName);
+async function getAuthenticatedSdks() {
     return getSdks();
 }
 
@@ -63,7 +60,7 @@ async function readData<T>(filePath: string): Promise<T | null> {
 
 // PRODUCT SEEDING ACTION
 export async function seedProducts(): Promise<{ success: boolean; error?: string; count?: number }> {
-    const { firestore } = await getSdks(); // Seeder puede no necesitar auth
+    const { firestore } = await getSdks();
     try {
         const productsData = await readData<{ products: Product[] }>(productsFilePath);
 
@@ -111,7 +108,7 @@ export async function saveProduct(newProduct: Product): Promise<{ success: boole
   }
   
   try {
-    const { firestore } = await getAuthenticatedSdks('saveProduct');
+    const { firestore } = await getAuthenticatedSdks();
     const productRef = doc(firestore, 'products', result.data.id);
     
     const docSnap = await getDoc(productRef);
@@ -143,7 +140,7 @@ export async function updateProduct(productId: string, updatedData: Partial<Omit
     }
 
     try {
-        const { firestore } = await getAuthenticatedSdks('updateProduct');
+        const { firestore } = await getAuthenticatedSdks();
         const productRef = doc(firestore, 'products', productId);
 
         await setDoc(productRef, result.data, { merge: true });
@@ -160,7 +157,7 @@ export async function updateProduct(productId: string, updatedData: Partial<Omit
 
 export async function deleteProduct(productId: string): Promise<{ success: boolean; error?: string; }> {
     try {
-        const { firestore } = await getAuthenticatedSdks('deleteProduct');
+        const { firestore } = await getAuthenticatedSdks();
         const loansQuery = query(collection(firestore, 'loans'), where('productId', '==', productId), where('status', '==', 'Prestado'));
         const activeLoansSnapshot = await getDocs(loansQuery);
         
@@ -187,7 +184,7 @@ export async function adjustStock(productId: string, adjustmentData: { quantity:
   }
 
   try {
-    const { firestore } = await getAuthenticatedSdks('adjustStock');
+    const { firestore } = await getAuthenticatedSdks();
     const productRef = doc(firestore, 'products', productId);
     
     await runTransaction(firestore, async (transaction) => {
@@ -228,7 +225,7 @@ export async function adjustStock(productId: string, adjustmentData: { quantity:
 
 // LOAN SEEDING ACTION
 export async function seedLoans(): Promise<{ success: boolean; error?: string; count?: number }> {
-    const { firestore } = await getSdks(); // Seeder puede no necesitar auth
+    const { firestore } = await getSdks();
     try {
         const loansData = await readData<{ loans: Loan[] }>(loansFilePath);
 
@@ -269,7 +266,7 @@ export async function saveLoan(loanData: Omit<Loan, 'id' | 'status'>): Promise<{
     }
     
     try {
-        const { firestore } = await getAuthenticatedSdks('saveLoan');
+        const { firestore } = await getAuthenticatedSdks();
         const newLoanRef = doc(collection(firestore, 'loans'));
         const newLoanId = newLoanRef.id;
         
@@ -309,7 +306,7 @@ export async function saveLoan(loanData: Omit<Loan, 'id' | 'status'>): Promise<{
 
 export async function updateLoanStatus(loanId: string, status: 'Prestado' | 'Devuelto'): Promise<{ success: boolean; error?: string }> {
     try {
-        const { firestore } = await getAuthenticatedSdks('updateLoanStatus');
+        const { firestore } = await getAuthenticatedSdks();
         const loanRef = doc(firestore, 'loans', loanId);
         
         await runTransaction(firestore, async (transaction) => {
@@ -349,7 +346,7 @@ export async function updateLoanStatus(loanId: string, status: 'Prestado' | 'Dev
 
 export async function deleteLoan(loanId: string): Promise<{ success: boolean; error?: string }> {
     try {
-        const { firestore } = await getAuthenticatedSdks('deleteLoan');
+        const { firestore } = await getAuthenticatedSdks();
         const loanRef = doc(firestore, 'loans', loanId);
         const loanDoc = await getDoc(loanRef);
 
