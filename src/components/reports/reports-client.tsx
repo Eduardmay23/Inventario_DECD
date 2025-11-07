@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useTransition } from 'react';
@@ -128,8 +129,8 @@ export default function ReportsClient({ products, loans, movements }: ReportsCli
   };
 
   return (
-    <Card>
-      <CardHeader className="print-hide">
+    <Card className="print-hide">
+      <CardHeader>
         <div className="flex items-center gap-2">
           <Bot className="h-6 w-6 text-primary" />
           <CardTitle>Reporte de Inventario con IA</CardTitle>
@@ -141,10 +142,10 @@ export default function ReportsClient({ products, loans, movements }: ReportsCli
       <CardContent>
         {report ? (
           <div className="space-y-4">
-            <div className="rounded-md border bg-muted/30 p-4 leading-relaxed report-printable-area">
+            <div className="printable-content rounded-md border bg-muted/30 p-4 leading-relaxed">
               <ReportViewer report={report} />
             </div>
-            <div className="flex w-full justify-center items-center print-hide">
+            <div className="flex w-full justify-center items-center">
               <Button size="sm" onClick={handleCloseReport}>
                 Cerrar
               </Button>
@@ -165,7 +166,7 @@ export default function ReportsClient({ products, loans, movements }: ReportsCli
             </div>
           </div>
         ) : (
-          <div className="flex min-h-[400px] flex-col items-center justify-center rounded-lg border-2 border-dashed bg-muted/50 p-8 text-center print-hide">
+          <div className="flex min-h-[400px] flex-col items-center justify-center rounded-lg border-2 border-dashed bg-muted/50 p-8 text-center">
             <div className="flex h-full flex-col items-center justify-center gap-4">
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
                 <FileText className="h-8 w-8 text-primary" />

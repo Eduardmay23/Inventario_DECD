@@ -3,20 +3,18 @@
     background: none;
   }
 
+  /* Ocultar todo lo que esté marcado para no imprimirse */
   .print-hide {
     display: none !important;
   }
-  
-  /* Hide everything except the printable area */
-  body * {
-    visibility: hidden;
+
+  /* Asegurarse de que el contenedor del contenido imprimible no restrinja a su hijo */
+  .printable-content-container {
+    display: contents; /* Esto hace que el contenedor se comporte como si no estuviera, permitiendo que el hijo se expanda */
   }
-  
-  #printable-area, #printable-area * {
-    visibility: visible;
-  }
-  
-  #printable-area {
+
+  /* Hacer que el área de impresión sea el único contenido visible */
+  .printable-content {
     position: absolute;
     left: 0;
     top: 0;
@@ -26,10 +24,19 @@
     margin: 0;
     border: none !important;
     box-shadow: none !important;
+    background: white !important;
+    color: black !important;
   }
 
-  /* Set page margins for printing */
+  /* Quitar el fondo del diálogo para que no aparezca en la impresión */
+  .bg-white.text-black {
+    background: transparent !important;
+    color: black !important;
+  }
+
+  /* Márgenes para la página impresa */
   @page {
     margin: 1in;
+    size: letter;
   }
 }
