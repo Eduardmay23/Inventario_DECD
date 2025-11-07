@@ -3,11 +3,10 @@
 "use client";
 
 import { useState, useMemo, useTransition } from "react";
-import { Download, Edit, MoreHorizontal, PlusCircle, Trash2, MinusCircle } from "lucide-react";
+import { Edit, MoreHorizontal, Trash2, MinusCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import type { Product } from "@/lib/types";
-import AppHeader from "@/components/header";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -50,9 +49,8 @@ import { EditProductForm } from "./edit-product-form";
 import { AdjustStockForm } from "./adjust-stock-form";
 import { saveProduct, updateProduct, deleteProduct, adjustStock } from "@/app/actions";
 
-export default function InventoryClient({ data }: { data: Product[] }) {
+export default function InventoryClient({ data, searchQuery }: { data: Product[], searchQuery: string }) {
   const router = useRouter();
-  const [searchQuery, setSearchQuery] = useState("");
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -182,53 +180,8 @@ export default function InventoryClient({ data }: { data: Product[] }) {
   }, [data, searchQuery]);
 
 
-  const handleDownloadCsv = () => {
-    const headers = ["ID", "Nombre", "Categoría", "Cantidad", "Ubicación", "PuntoDeReorden"];
-    const csvRows = [
-      headers.join(","),
-      ...filteredData.map(p => 
-        [p.id, `"${p.name}"`, p.category, p.quantity, `"${p.location}"`, p.reorderPoint].join(",")
-      )
-    ];
-    const csvString = csvRows.join("\n");
-    const blob = new Blob(['\uFEFF' + csvString], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement("a");
-    if (link.download !== undefined) {
-      const url = URL.createObjectURL(blob);
-      link.setAttribute("href", url);
-      link.setAttribute("download", "stockwise_inventario.csv");
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      toast({
-        title: "Descarga Iniciada",
-        description: "Tu archivo CSV de inventario se está descargando.",
-      });
-    }
-  };
-
   return (
     <>
-      <AppHeader
-        title="Inventario"
-        search={{
-          value: searchQuery,
-          onChange: (e) => setSearchQuery(e.target.value),
-          placeholder: "Buscar por nombre, ID, categoría...",
-        }}
-      >
-        <div className="flex items-center gap-2">
-          <Button size="sm" variant="outline" onClick={handleDownloadCsv}>
-            <Download className="h-4 w-4 mr-2" />
-            Descargar CSV
-          </Button>
-          <Button size="sm" onClick={() => setIsAddDialogOpen(true)}>
-            <PlusCircle className="h-4 w-4 mr-2" />
-            Añadir Producto
-          </Button>
-        </div>
-      </AppHeader>
       <main className="flex-1 p-4 md:p-6">
         <Card>
             <CardHeader>
