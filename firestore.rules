@@ -1,11 +1,11 @@
+
 /**
  * @fileoverview Firestore Security Rules for StockWise.
  *
  * Core Philosophy:
- * This ruleset enforces a hybrid security model. Core data (Products, Locations, Loans)
+ * This ruleset enforces a hybrid security model. Core data (Products, Locations, Loans, Movements)
  * is publicly readable but writable only by authenticated users. User-specific
- * data (StockAlerts) is strictly owned by each user. Admins have elevated
- * privileges to manage other users.
+ * data (profiles) is strictly managed by admins or the user themselves.
  *
  * Data Structure:
  * - /products/{productId}: Public product information.
@@ -13,7 +13,6 @@
  * - /loans/{loanId}: Loan records.
  * - /movements/{movementId}: Records of stock adjustments.
  * - /users/{userId}: User profile information.
- * - /users/{userId}/stockAlerts/{stockAlertId}: User-specific stock alerts.
  *
  */
 rules_version = '2';
@@ -28,10 +27,13 @@ service cloud.firestore {
       allow read, list: if isSignedIn();
       allow create: if isSignedIn();
       allow update: if isOwner(userId) || isAdmin();
+      // Deleting users is handled server-side, not directly by clients for security.
+      allow delete: if false;
     }
 
     /**
      * @description Allows anyone to read product information, but only authenticated users to write.
+     * This is required for operations like returning a loan, which updates both the loan and the product stock.
      * @path /products/{productId}
      */
     match /products/{productId} {
@@ -40,11 +42,11 @@ service cloud.firestore {
     }
     
     /**
-     * @description Allows anyone to read location information, but only authenticated users to create, update, or delete locations.
+     * @description Allows anyone to read location information, but only authenticated users to write.
      * @path /locations/{locationId}
      */
     match /locations/{locationId} {
-      allow read, list: if true;
+      allow get, list: if true;
       allow create, update, delete: if isSignedIn();
     }
 
@@ -62,30 +64,6 @@ service cloud.firestore {
      */
     match /movements/{movementId} {
         allow read, write: if isSignedIn();
-    }
-
-    /**
-     * @description This path is deprecated and no longer used.
-     * @path /products/{productId}/stockLevels/{stockLevelId}
-     */
-    match /products/{productId}/stockLevels/{stockLevelId} {
-      allow read, write: if false; // No longer used
-    }
-
-    /**
-     * @description Allows a user to manage their own stock alerts.
-     * @path /users/{userId}/stockAlerts/{stockAlertId}
-     */
-    match /users/{userId}/stockAlerts/{stockAlertId} {
-      allow read, write: if isOwner(userId);
-    }
-    
-    /**
-     * @description This path is deprecated and no longer used.
-     * @path /products/{productId}/stockMovements/{stockMovementId}
-     */
-    match /products/{productId}/stockMovements/{stockMovementId} {
-       allow read, write: if false; // No longer used
     }
 
     // --- Helper functions ---

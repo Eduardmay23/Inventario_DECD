@@ -1,5 +1,4 @@
 
-
 export type Product = {
   id: string;
   name: string;
@@ -9,20 +8,13 @@ export type Product = {
   reorderPoint: number;
 };
 
-export type StockLog = {
-  id: string;
-  timestamp: string;
-  productName: string;
-  quantityChange: number;
-  reason: 'Venta' | 'Reabastecimiento' | 'Ajuste' | 'Daño';
-};
-
 export type Loan = {
   id: string;
   productId: string;
   productName: string;
   requester: string;
   loanDate: string;
+  returnDate?: string;
   quantity: number;
   status: 'Prestado' | 'Devuelto';
 };
@@ -40,18 +32,9 @@ export type StockMovement = {
 export type User = {
     id: string; // This will be the Firebase Auth UID
     uid: string; // Explicitly keep uid as it's used in Firestore doc
-    username: string; // This will be the email
+    username: string; 
     password?: string; // Only used for creation, not stored in Firestore
     name: string;
     role: 'admin' | 'user';
     permissions: string[];
 };
-
-export type UserProfile = {
-  uid: string;
-  email: string;
-  name: string;
-  role: 'admin' | 'user';
-};
-
-    

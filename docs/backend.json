@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "Product": {
@@ -14,34 +15,30 @@
           "type": "string",
           "description": "Name of the product."
         },
-        "description": {
-          "type": "string",
-          "description": "Detailed description of the product."
-        },
-        "sku": {
-          "type": "string",
-          "description": "Stock Keeping Unit - a unique identifier for the product."
-        },
         "category": {
           "type": "string",
           "description": "Category the product belongs to."
         },
-        "cost": {
-          "type": "number",
-          "description": "Cost of the product."
+        "location": {
+            "type": "string",
+            "description": "Physical location of the product in the warehouse."
         },
-        "price": {
-          "type": "number",
-          "description": "Selling price of the product."
+        "quantity": {
+            "type": "number",
+            "description": "Current stock quantity."
+        },
+        "reorderPoint": {
+            "type": "number",
+            "description": "The stock level at which a reorder should be triggered."
         }
       },
       "required": [
         "id",
         "name",
-        "sku",
         "category",
-        "cost",
-        "price"
+        "location",
+        "quantity",
+        "reorderPoint"
       ]
     },
     "Location": {
@@ -69,69 +66,21 @@
         "address"
       ]
     },
-    "StockLevel": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "StockLevel",
-      "type": "object",
-      "description": "Represents the quantity of a product at a specific location.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the stock level record."
+    "Loan": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Loan",
+        "description": "Represents a record of a product being loaned out.",
+        "type": "object",
+        "properties": {
+            "id": {"type": "string"},
+            "productId": {"type": "string"},
+            "productName": {"type": "string"},
+            "requester": {"type": "string"},
+            "loanDate": {"type": "string", "format": "date-time"},
+            "quantity": {"type": "number"},
+            "status": {"type": "string", "enum": ["Prestado", "Devuelto"]}
         },
-        "productId": {
-          "type": "string",
-          "description": "Reference to Product. (Relationship: Product 1:N StockLevel)"
-        },
-        "locationId": {
-          "type": "string",
-          "description": "Reference to Location. (Relationship: Location 1:N StockLevel)"
-        },
-        "quantity": {
-          "type": "number",
-          "description": "The quantity of the product at this location."
-        }
-      },
-      "required": [
-        "id",
-        "productId",
-        "locationId",
-        "quantity"
-      ]
-    },
-    "StockAlert": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "StockAlert",
-      "type": "object",
-      "description": "Represents an alert that is triggered when stock levels are low.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the stock alert."
-        },
-        "productId": {
-          "type": "string",
-          "description": "Reference to Product. (Relationship: Product 1:N StockAlert)"
-        },
-        "threshold": {
-          "type": "number",
-          "description": "The minimum quantity that triggers the alert."
-        },
-        "alertDate": {
-          "type": "string",
-          "description": "Date and time the alert was triggered.",
-          "format": "date-time"
-        },
-        "resolved": {
-          "type": "boolean",
-          "description": "Indicates whether the alert has been resolved."
-        }
-      },
-      "required": [
-        "id",
-        "productId",
-        "threshold"
-      ]
+        "required": ["id", "productId", "productName", "requester", "loanDate", "quantity", "status"]
     },
     "StockMovement": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -147,41 +96,54 @@
           "type": "string",
           "description": "Reference to Product. (Relationship: Product 1:N StockMovement)"
         },
-        "fromLocationId": {
-          "type": "string",
-          "description": "Reference to Location.  Location the product moved from. (Relationship: Location 1:N StockMovement)"
-        },
-        "toLocationId": {
-          "type": "string",
-          "description": "Reference to Location. Location the product moved to. (Relationship: Location 1:N StockMovement)"
+        "productName": {
+            "type": "string"
         },
         "quantity": {
           "type": "number",
           "description": "The quantity of the product that was moved."
         },
-        "movementDate": {
+        "date": {
           "type": "string",
           "description": "Date and time the stock movement occurred.",
           "format": "date-time"
         },
         "type": {
           "type": "string",
-          "description": "The type of stock movement (e.g., Delivery, Sale, Transfer)."
+          "description": "The type of stock movement (e.g., descuento, incremento)."
+        },
+        "reason": {
+            "type": "string"
         }
       },
       "required": [
         "id",
         "productId",
+        "productName",
         "quantity",
-        "movementDate",
-        "type"
+        "date",
+        "type",
+        "reason"
       ]
+    },
+    "User": {
+        "title": "User",
+        "description": "Represents a user account in the system.",
+        "type": "object",
+        "properties": {
+            "id": {"type": "string"},
+            "uid": {"type": "string"},
+            "name": {"type": "string"},
+            "username": {"type": "string"},
+            "role": {"type": "string", "enum": ["admin", "user"]},
+            "permissions": {"type": "array", "items": {"type": "string"}}
+        },
+        "required": ["id", "uid", "name", "username", "role"]
     }
   },
   "auth": {
     "providers": [
-      "password",
-      "anonymous"
+      "password"
     ]
   },
   "firestore": {
@@ -193,13 +155,7 @@
           "schema": {
             "$ref": "#/backend/entities/Product"
           },
-          "description": "Stores product information. Includes productId as a param.",
-          "params": [
-            {
-              "name": "productId",
-              "description": "The unique identifier for the product."
-            }
-          ]
+          "description": "Stores all product information."
         }
       },
       {
@@ -209,13 +165,7 @@
           "schema": {
             "$ref": "#/backend/entities/Location"
           },
-          "description": "Stores location information.  Includes locationId as a param.",
-          "params": [
-            {
-              "name": "locationId",
-              "description": "The unique identifier for the location."
-            }
-          ]
+          "description": "Stores information about physical warehouse locations."
         }
       },
       {
@@ -225,52 +175,30 @@
           "schema": {
             "$ref": "#/backend/entities/Loan"
           },
-          "description": "Stores loan records for products. Includes loanId as a param.",
-          "params": [
-            {
-              "name": "loanId",
-              "description": "The unique identifier for the loan."
-            }
-          ]
+          "description": "Stores records of all product loans."
         }
       },
       {
         "path": "/movements/{movementId}",
         "definition": {
-          "entityName": "StockMovement",
-          "schema": {
-            "$ref": "#/backend/entities/StockMovement"
-          },
-          "description": "Stores stock movement records. Includes movementId as a param.",
-          "params": [
-            {
-              "name": "movementId",
-              "description": "The unique identifier for the stock movement."
-            }
-          ]
+            "entityName": "StockMovement",
+            "schema": {
+                "$ref": "#/backend/entities/StockMovement"
+            },
+            "description": "Stores records of all stock movements, like adjustments or damages."
         }
       },
       {
-        "path": "/users/{userId}/stockAlerts/{stockAlertId}",
+        "path": "/users/{userId}",
         "definition": {
-          "entityName": "StockAlert",
+          "entityName": "User",
           "schema": {
-            "$ref": "#/backend/entities/StockAlert"
+            "$ref": "#/backend/entities/User"
           },
-          "description": "Stores stock alerts specific to a user.  Includes userId and stockAlertId as params.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier for the user."
-            },
-            {
-              "name": "stockAlertId",
-              "description": "The unique identifier for the stock alert."
-            }
-          ]
+          "description": "Stores user profiles and their specific permissions."
         }
       }
     ],
-    "reasoning": "The Firestore structure for StockWise is designed to provide a secure and scalable inventory management system. It prioritizes authorization independence and simplifies security rules through denormalization. User-owned data (stock alerts) is segregated under user-specific paths. Core data such as Products, Locations, Loans, and Movements are stored at the root for global access and simplified querying, especially for reporting purposes."
+    "reasoning": "The Firestore structure for StockWise is designed to provide a secure and scalable inventory management system. It prioritizes authorization independence and simplifies security rules. Core data such as Products, Locations, Loans, and Movements are stored at the root for global access and simplified querying. User-specific data is stored under a /users collection to manage permissions and access control centrally."
   }
 }
