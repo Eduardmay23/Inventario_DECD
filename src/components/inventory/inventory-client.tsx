@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useMemo, useTransition } from "react";
-import { Edit, MoreHorizontal, Trash2, MinusCircle } from "lucide-react";
+import { Edit, MoreHorizontal, Trash2, MinusCircle, PlusCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import type { Product } from "@/lib/types";
@@ -257,7 +257,13 @@ export default function InventoryClient({ data, searchQuery, onAddProductClick, 
                         )) : (
                           <TableRow>
                             <TableCell colSpan={7} className="h-24 text-center">
-                              No se encontraron productos. Empieza añadiendo uno nuevo.
+                              <div className="flex flex-col items-center gap-2">
+                                <p>No se encontraron productos.</p>
+                                <Button size="sm" variant="outline" onClick={onAddProductClick}>
+                                  <PlusCircle className="mr-2 h-4 w-4" />
+                                  Añadir el primero
+                                </Button>
+                              </div>
                             </TableCell>
                           </TableRow>
                         )}

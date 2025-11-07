@@ -104,14 +104,13 @@ export async function saveProduct(newProduct: Product): Promise<{ success: boole
   try {
     const { firestore } = getSdks();
     const productRef = doc(firestore, 'products', result.data.id);
+    
+    const docSnap = await getDoc(productRef);
+    if (docSnap.exists()) {
+        throw new Error('Este ID de producto ya existe. Por favor, utiliza uno único.');
+    }
 
-    await runTransaction(firestore, async (transaction) => {
-        const docSnap = await transaction.get(productRef);
-        if (docSnap.exists()) {
-            throw new Error('Este ID de producto ya existe. Por favor, utiliza uno único.');
-        }
-        transaction.set(productRef, result.data);
-    });
+    await setDoc(productRef, result.data);
 
     return { success: true, data: result.data };
 
