@@ -18,10 +18,43 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useAuth, useFirestore } from '@/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { FirebaseError } from 'firebase/app';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, getDocs, collection } from 'firebase/firestore';
 
 
 const DUMMY_DOMAIN = 'stockwise.local';
+
+async function createInitialUsers(auth: any, firestore: any) {
+    try {
+        // Create admin user
+        const { user: adminAuthUser } = await createUserWithEmailAndPassword(auth, `admin@${DUMMY_DOMAIN}`, 'password123');
+        const adminUserDoc = {
+            uid: adminAuthUser.uid,
+            name: 'Administrador',
+            username: 'admin',
+            role: 'admin' as const,
+            permissions: ['dashboard', 'inventory', 'loans', 'reports', 'settings'],
+        };
+        await setDoc(doc(firestore, "users", adminAuthUser.uid), adminUserDoc);
+
+        // Create test user 'pedro'
+        const { user: pedroAuthUser } = await createUserWithEmailAndPassword(auth, `pedro@${DUMMY_DOMAIN}`, '123456');
+        const pedroUserDoc = {
+            uid: pedroAuthUser.uid,
+            name: 'Pedro Prueba',
+            username: 'pedro',
+            role: 'user' as const,
+            permissions: ['dashboard', 'inventory', 'loans'],
+        };
+        await setDoc(doc(firestore, "users", pedroAuthUser.uid), pedroUserDoc);
+
+        return true; // Indicate that initial users were created
+    } catch (error) {
+        console.error("Error creating initial users:", error);
+        // This might fail if users already exist, which is okay.
+        return false;
+    }
+}
+
 
 export default function LoginPage() {
   const router = useRouter();
@@ -47,37 +80,29 @@ export default function LoginPage() {
     const email = `${username}@${DUMMY_DOMAIN}`;
 
     try {
+      // Check if any users exist in Firestore
+      const usersSnapshot = await getDocs(collection(firestore, 'users'));
+      if (usersSnapshot.empty) {
+          // If no users exist, create the initial set
+          const usersCreated = await createInitialUsers(auth, firestore);
+          if (usersCreated) {
+             // Try to sign in the user who just tried to log in
+             await signInWithEmailAndPassword(auth, email, password);
+             router.replace('/dashboard');
+             return;
+          }
+      }
+      
+      // Default sign-in attempt
       await signInWithEmailAndPassword(auth, email, password);
       router.replace('/dashboard');
-    } catch (e) {
-      if (e instanceof FirebaseError && (e.code === 'auth/user-not-found' || e.code === 'auth/invalid-credential')) {
-        // Special case for the very first admin user
-        if (username === 'admin') {
-          try {
-            const { user: newAuthUser } = await createUserWithEmailAndPassword(auth, email, password);
-            const adminUserDoc = {
-                uid: newAuthUser.uid,
-                name: 'Administrador',
-                username: 'admin',
-                role: 'admin' as const,
-                permissions: ['dashboard', 'inventory', 'loans', 'reports', 'settings'],
-            };
-            
-            // Use standard setDoc to create the user profile in Firestore
-            const userDocRef = doc(firestore, "users", newAuthUser.uid);
-            await setDoc(userDocRef, adminUserDoc);
 
-            router.replace('/dashboard');
-          } catch (creationError) {
-             setError('No se pudo crear la cuenta de administrador. Inténtalo de nuevo.');
-          }
-        } else {
-             setError('Usuario o contraseña incorrectos.');
-        }
-      } else {
+    } catch (e) {
         let errorMessage = 'Ocurrió un error inesperado. Inténtalo de nuevo.';
         if (e instanceof FirebaseError) {
           switch (e.code) {
+            case 'auth/user-not-found':
+            case 'auth/invalid-credential':
             case 'auth/wrong-password':
               errorMessage = 'Usuario o contraseña incorrectos.';
               break;
@@ -90,7 +115,6 @@ export default function LoginPage() {
           }
         }
         setError(errorMessage);
-      }
     } finally {
       setIsLoading(false);
     }
@@ -152,7 +176,7 @@ export default function LoginPage() {
           </CardContent>
         </Card>
         <p className="px-8 text-center text-sm text-muted-foreground">
-          Usa 'admin' y 'password123' la primera vez para crear la cuenta de administrador.
+          La primera vez que uses la app, se crearán los usuarios 'admin' y 'pedro'.
         </p>
       </div>
     </main>
