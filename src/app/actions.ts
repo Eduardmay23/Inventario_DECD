@@ -6,7 +6,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { z } from 'zod';
 import type { Product, Loan, StockMovement } from '@/lib/types';
-import { collection, writeBatch, doc } from 'firebase/firestore';
+import { collection, writeBatch, doc, getDoc, setDoc, deleteDoc, runTransaction } from 'firebase/firestore';
 import { getSdks } from '@/firebase/server';
 
 const productSchema = z.object({
@@ -98,26 +98,24 @@ export async function saveProduct(newProduct: Product): Promise<{ success: boole
   }
   
   try {
-    const data = await readData(productsFilePath, { products: [] });
-    
-    const idExists = data.products.some(p => p.id.toLowerCase() === result.data.id.toLowerCase());
-    if (idExists) {
-        return { success: false, error: 'Este ID ya existe. Por favor, utiliza uno único.' };
+    const { firestore } = getSdks();
+    const productRef = doc(firestore, 'products', result.data.id);
+
+    const docSnap = await getDoc(productRef);
+    if (docSnap.exists()) {
+        return { success: false, error: 'Este ID de producto ya existe. Por favor, utiliza uno único.' };
     }
 
-    const productWithId = result.data;
+    await setDoc(productRef, result.data);
+    return { success: true, data: result.data };
 
-    data.products.push(productWithId);
-    await writeData(productsFilePath, data);
-    return { success: true, data: productWithId };
   } catch (error: any) {
-    console.error('Failed to save product:', error);
+    console.error('Failed to save product to Firestore:', error);
     return { success: false, error: error.message || 'An unknown error occurred' };
   }
 }
 
 export async function updateProduct(productId: string, updatedData: Partial<Omit<Product, 'id'>>): Promise<{ success: boolean; error?: string; data?: Product }> {
-    // We remove the 'id' from the schema for updates, as it shouldn't be changed.
     const updateSchema = productSchema.omit({ id: true }).partial();
     const result = updateSchema.safeParse(updatedData);
 
@@ -127,38 +125,29 @@ export async function updateProduct(productId: string, updatedData: Partial<Omit
     }
 
     try {
-        const data = await readData(productsFilePath, { products: [] });
-        const productIndex = data.products.findIndex(p => p.id === productId);
+        const { firestore } = getSdks();
+        const productRef = doc(firestore, 'products', productId);
 
-        if (productIndex === -1) {
-            return { success: false, error: 'No se encontró el producto a actualizar.' };
-        }
+        await setDoc(productRef, result.data, { merge: true });
         
-        data.products[productIndex] = { ...data.products[productIndex], ...result.data };
+        const updatedDoc = await getDoc(productRef);
+        const finalData = updatedDoc.data() as Product;
 
-        await writeData(productsFilePath, data);
-        return { success: true, data: data.products[productIndex] };
+        return { success: true, data: finalData };
     } catch (error: any) {
-        console.error('Failed to update product:', error);
+        console.error('Failed to update product in Firestore:', error);
         return { success: false, error: error.message || 'An unknown error occurred while updating.' };
     }
 }
 
 export async function deleteProduct(productId: string): Promise<{ success: boolean; error?: string; }> {
     try {
-        const data = await readData(productsFilePath, { products: [] });
-        
-        const initialCount = data.products.length;
-        data.products = data.products.filter(p => p.id !== productId);
-
-        if (data.products.length === initialCount) {
-            return { success: false, error: 'No se encontró el producto a eliminar.' };
-        }
-
-        await writeData(productsFilePath, data);
+        const { firestore } = getSdks();
+        const productRef = doc(firestore, 'products', productId);
+        await deleteDoc(productRef);
         return { success: true };
     } catch (error: any) {
-        console.error('Failed to delete product:', error);
+        console.error('Failed to delete product from Firestore:', error);
         return { success: false, error: error.message || 'An unknown error occurred' };
     }
 }
@@ -173,37 +162,40 @@ export async function adjustStock(productId: string, adjustmentData: { quantity:
   }
 
   try {
-    const productsData = await readData(productsFilePath, { products: [] });
-    const productIndex = productsData.products.findIndex(p => p.id === productId);
+    const { firestore } = getSdks();
+    const productRef = doc(firestore, 'products', productId);
+    
+    await runTransaction(firestore, async (transaction) => {
+        const productDoc = await transaction.get(productRef);
+        if (!productDoc.exists()) {
+            throw new Error("No se encontró el producto.");
+        }
 
-    if (productIndex === -1) {
-      return { success: false, error: "No se encontró el producto." };
-    }
+        const product = productDoc.data() as Product;
+        if (result.data.quantity > product.quantity) {
+            throw new Error(`Stock insuficiente. Solo hay ${product.quantity} unidades.`);
+        }
 
-    const product = productsData.products[productIndex];
-    if (result.data.quantity > product.quantity) {
-      return { success: false, error: `Stock insuficiente. Solo hay ${product.quantity} unidades.` };
-    }
+        // Update product quantity
+        const newQuantity = product.quantity - result.data.quantity;
+        transaction.update(productRef, { quantity: newQuantity });
 
-    // Update product quantity
-    product.quantity -= result.data.quantity;
-    await writeData(productsFilePath, productsData);
-
-    // Record the movement
-    const movementsData = await readData(movementsFilePath, { movements: [] });
-    const newMovement: StockMovement = {
-      id: (Date.now() + Math.random()).toString(36),
-      productId: product.id,
-      productName: product.name,
-      quantity: result.data.quantity,
-      type: 'descuento',
-      reason: result.data.reason,
-      date: new Date().toISOString(),
-    };
-    movementsData.movements.push(newMovement);
-    await writeData(movementsFilePath, movementsData);
+        // Record the movement in a subcollection
+        const movementRef = doc(collection(firestore, `products/${productId}/stockMovements`));
+        const newMovement: StockMovement = {
+            id: movementRef.id,
+            productId: product.id,
+            productName: product.name,
+            quantity: result.data.quantity,
+            type: 'descuento',
+            reason: result.data.reason,
+            date: new Date().toISOString(),
+        };
+        transaction.set(movementRef, newMovement);
+    });
 
     return { success: true };
+
   } catch (e: any) {
     console.error("Failed to adjust stock:", e);
     return { success: false, error: e.message || "Ocurrió un error desconocido." };
