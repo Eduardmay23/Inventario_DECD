@@ -1,7 +1,9 @@
 
 "use client";
 
-import { Edit, MoreHorizontal, Trash2, MinusCircle, PlusCircle, Loader2 } from "lucide-react";
+import { Edit, MoreHorizontal, Trash2, MinusCircle, PlusCircle, Loader2, FileSpreadsheet } from "lucide-react";
+import * as XLSX from "xlsx";
+
 import type { Product } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import {
@@ -89,6 +91,21 @@ export default function InventoryClient({
   onAdjustClick,
 }: InventoryClientProps) {
 
+  const handleExport = () => {
+    const dataToExport = data.map(product => ({
+      'ID': product.id,
+      'Nombre': product.name,
+      'Categoría': product.category,
+      'Cantidad': product.quantity,
+      'Ubicación': product.location,
+      'Punto de Reorden': product.reorderPoint
+    }));
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Productos");
+    XLSX.writeFile(workbook, "inventario.xlsx");
+  };
+
   return (
     <>
       <main className="flex-1 p-4 md:p-6">
@@ -99,10 +116,16 @@ export default function InventoryClient({
                         <CardTitle>Todos los Productos</CardTitle>
                         <CardDescription>Gestiona tus productos y sus niveles de stock.</CardDescription>
                     </div>
-                     <Button size="sm" onClick={() => setIsAddDialogOpen(true)}>
-                        <PlusCircle className="h-4 w-4 mr-2" />
-                        Añadir Producto
-                    </Button>
+                    <div className="flex items-center gap-2">
+                         <Button size="sm" variant="outline" onClick={handleExport} disabled={data.length === 0}>
+                            <FileSpreadsheet className="h-4 w-4 mr-2" />
+                            Exportar a Excel
+                        </Button>
+                         <Button size="sm" onClick={() => setIsAddDialogOpen(true)}>
+                            <PlusCircle className="h-4 w-4 mr-2" />
+                            Añadir Producto
+                        </Button>
+                    </div>
                 </div>
             </CardHeader>
             <CardContent>
