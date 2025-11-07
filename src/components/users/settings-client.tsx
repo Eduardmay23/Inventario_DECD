@@ -45,8 +45,9 @@ import type { User } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 import { useFirestore, useAuth } from '@/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
+import { doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { FirebaseError } from 'firebase/app';
+import { updateUserAction } from '@/actions/users';
 
 type SettingsClientProps = {
   initialUsers: User[];
@@ -119,24 +120,21 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
     setIsEditUserOpen(true);
   };
 
-  const handleUpdateUser = (userId: string, data: Partial<Omit<User, 'id' | 'role' | 'uid' | 'password'>>) => {
+  const handleUpdateUser = (userId: string, data: Partial<Omit<User, 'id' | 'role' | 'uid'>>) => {
      startTransition(async () => {
-        if (!firestore) return;
-        try {
-            const userDocRef = doc(firestore, 'users', userId);
-            await updateDoc(userDocRef, data);
-            
+        const result = await updateUserAction(userId, data);
+        if (result.success) {
             toast({
                 title: "Usuario Actualizado",
                 description: `Los datos del usuario han sido actualizados.`,
             });
             setIsEditUserOpen(false);
             router.refresh();
-        } catch (error: any) {
+        } else {
              toast({
                 variant: "destructive",
                 title: "Error al Actualizar",
-                description: "No se pudo actualizar el perfil del usuario en la base de datos.",
+                description: result.error || "No se pudo actualizar el usuario.",
             });
         }
     });
@@ -161,12 +159,11 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
         try {
             const userDocRef = doc(firestore, "users", userToDelete.uid);
             await deleteDoc(userDocRef);
-            // We are intentionally not deleting the auth user to avoid complexity
-            // with re-authentication for the admin user performing the action.
-            // A server-side function would be needed for a clean deletion.
+            // A server action would be needed to delete the auth user, which is complex.
+            // For now, we only delete the Firestore profile. The user won't be able to log in effectively.
             toast({
                 title: "Usuario Eliminado",
-                description: `El perfil del usuario "${userToDelete.username}" ha sido eliminado. La cuenta de acceso permanecerá activa pero sin perfil.`,
+                description: `El perfil del usuario "${userToDelete.username}" ha sido eliminado.`,
             });
         } catch (error: any) {
             toast({
@@ -278,7 +275,7 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
                 </Table>
               </CardContent>
             </Card>
-
+            
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -288,13 +285,11 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
                 </CardHeader>
                 <CardContent>
                     <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
-                      <li>La creación de usuarios y la actualización de sus datos se gestiona de forma segura a través del cliente autenticado.</li>
-                      <li>La funcionalidad de cambio de contraseña ha sido eliminada de este panel para simplificar y evitar errores de autenticación. Las contraseñas se establecen al crear el usuario.</li>
-                      <li>La eliminación de usuarios solo borra su perfil de la base de datos de Firestore. La cuenta de autenticación subyacente no se elimina para no requerir una re-autenticación compleja por parte del administrador.</li>
+                      <li>La actualización de contraseñas y otros datos sensibles se realiza de forma segura a través de una Acción de Servidor de Next.js.</li>
+                       <li>La eliminación de usuarios solo borra su perfil de la base de datos (Firestore). La cuenta de autenticación no se elimina para evitar complejidades. Para una eliminación completa, se debe hacer desde la Consola de Firebase.</li>
                     </ul>
                 </CardContent>
             </Card>
-
           </div>
         </main>
       </div>
