@@ -1,4 +1,3 @@
-
 {
   "entities": {
     "Product": {
@@ -15,37 +14,68 @@
           "type": "string",
           "description": "Name of the product."
         },
+        "description": {
+          "type": "string",
+          "description": "Detailed description of the product."
+        },
+        "sku": {
+          "type": "string",
+          "description": "Stock Keeping Unit; a unique identifier for the product, often used internally."
+        },
         "category": {
           "type": "string",
           "description": "Category the product belongs to."
-        },
-        "location": {
-            "type": "string",
-            "description": "Physical location of the product in the warehouse."
-        },
-        "quantity": {
-            "type": "number",
-            "description": "Current stock quantity."
-        },
-        "reorderPoint": {
-            "type": "number",
-            "description": "The stock level at which a reorder should be triggered."
         }
       },
       "required": [
         "id",
         "name",
-        "category",
-        "location",
+        "description",
+        "sku",
+        "category"
+      ]
+    },
+    "StockLevel": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "StockLevel",
+      "type": "object",
+      "description": "Represents the stock level of a product at a specific location.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the stock level entry."
+        },
+        "productId": {
+          "type": "string",
+          "description": "Reference to Product. (Relationship: Product 1:N StockLevel)"
+        },
+        "locationId": {
+          "type": "string",
+          "description": "Reference to Location. (Relationship: Location 1:N StockLevel)"
+        },
+        "quantity": {
+          "type": "number",
+          "description": "Current quantity of the product at the location."
+        },
+        "lastUpdated": {
+          "type": "string",
+          "description": "Timestamp of the last stock level update.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "productId",
+        "locationId",
         "quantity",
-        "reorderPoint"
+        "lastUpdated"
       ]
     },
     "Location": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Location",
       "type": "object",
-      "description": "Represents a physical location where products are stored.",
+      "description": "Represents a storage location in the inventory.",
       "properties": {
         "id": {
           "type": "string",
@@ -55,38 +85,63 @@
           "type": "string",
           "description": "Name of the location (e.g., Warehouse A, Shelf 2)."
         },
-        "address": {
+        "description": {
           "type": "string",
-          "description": "Address of the location."
+          "description": "Detailed description of the location."
         }
       },
       "required": [
         "id",
         "name",
-        "address"
+        "description"
       ]
     },
-    "Loan": {
-        "$schema": "http://json-schema.org/draft-07/schema#",
-        "title": "Loan",
-        "description": "Represents a record of a product being loaned out.",
-        "type": "object",
-        "properties": {
-            "id": {"type": "string"},
-            "productId": {"type": "string"},
-            "productName": {"type": "string"},
-            "requester": {"type": "string"},
-            "loanDate": {"type": "string", "format": "date-time"},
-            "quantity": {"type": "number"},
-            "status": {"type": "string", "enum": ["Prestado", "Devuelto"]}
+    "StockAlert": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "StockAlert",
+      "type": "object",
+      "description": "Represents an alert for low stock levels.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the stock alert."
         },
-        "required": ["id", "productId", "productName", "requester", "loanDate", "quantity", "status"]
+        "productId": {
+          "type": "string",
+          "description": "Reference to Product. (Relationship: Product 1:N StockAlert)"
+        },
+        "locationId": {
+          "type": "string",
+          "description": "Reference to Location. (Relationship: Location 1:N StockAlert)"
+        },
+        "threshold": {
+          "type": "number",
+          "description": "Minimum stock level that triggers the alert."
+        },
+        "alertDate": {
+          "type": "string",
+          "description": "Date and time the alert was triggered.",
+          "format": "date-time"
+        },
+        "resolved": {
+          "type": "boolean",
+          "description": "Boolean indicating if the alert has been resolved. Default value is false."
+        }
+      },
+      "required": [
+        "id",
+        "productId",
+        "locationId",
+        "threshold",
+        "alertDate",
+        "resolved"
+      ]
     },
     "StockMovement": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "StockMovement",
       "type": "object",
-      "description": "Represents a movement of stock, such as a delivery or a sale.",
+      "description": "Represents a movement of stock in the inventory.",
       "properties": {
         "id": {
           "type": "string",
@@ -96,54 +151,44 @@
           "type": "string",
           "description": "Reference to Product. (Relationship: Product 1:N StockMovement)"
         },
-        "productName": {
-            "type": "string"
+        "fromLocationId": {
+          "type": "string",
+          "description": "Reference to Location. (Relationship: Location 1:N StockMovement).  The location the product moved from."
+        },
+        "toLocationId": {
+          "type": "string",
+          "description": "Reference to Location. (Relationship: Location 1:N StockMovement). The location the product moved to."
         },
         "quantity": {
           "type": "number",
-          "description": "The quantity of the product that was moved."
+          "description": "Quantity of the product moved."
         },
-        "date": {
+        "movementDate": {
           "type": "string",
-          "description": "Date and time the stock movement occurred.",
+          "description": "Date and time of the stock movement.",
           "format": "date-time"
         },
         "type": {
           "type": "string",
-          "description": "The type of stock movement (e.g., descuento, incremento)."
-        },
-        "reason": {
-            "type": "string"
+          "description": "The type of stock movement, for example, restock or relocation.",
+          "format": "string"
         }
       },
       "required": [
         "id",
         "productId",
-        "productName",
+        "fromLocationId",
+        "toLocationId",
         "quantity",
-        "date",
-        "type",
-        "reason"
+        "movementDate",
+        "type"
       ]
-    },
-    "User": {
-        "title": "User",
-        "description": "Represents a user account in the system.",
-        "type": "object",
-        "properties": {
-            "id": {"type": "string"},
-            "uid": {"type": "string"},
-            "name": {"type": "string"},
-            "username": {"type": "string"},
-            "role": {"type": "string", "enum": ["admin", "user"]},
-            "permissions": {"type": "array", "items": {"type": "string"}}
-        },
-        "required": ["id", "uid", "name", "username", "role"]
     }
   },
   "auth": {
     "providers": [
-      "password"
+      "password",
+      "anonymous"
     ]
   },
   "firestore": {
@@ -155,7 +200,73 @@
           "schema": {
             "$ref": "#/backend/entities/Product"
           },
-          "description": "Stores all product information."
+          "description": "Stores product information. The {productId} is a unique identifier for each product.",
+          "params": [
+            {
+              "name": "productId",
+              "description": "Unique identifier for the product."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/products/{productId}/stockLevels/{stockLevelId}",
+        "definition": {
+          "entityName": "StockLevel",
+          "schema": {
+            "$ref": "#/backend/entities/StockLevel"
+          },
+          "description": "Stores stock level information for a product. Includes denormalized productId for authorization independence. The {stockLevelId} is a unique identifier for each stock level entry.",
+          "params": [
+            {
+              "name": "productId",
+              "description": "Unique identifier for the product."
+            },
+            {
+              "name": "stockLevelId",
+              "description": "Unique identifier for the stock level entry."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/products/{productId}/stockAlerts/{stockAlertId}",
+        "definition": {
+          "entityName": "StockAlert",
+          "schema": {
+            "$ref": "#/backend/entities/StockAlert"
+          },
+          "description": "Stores stock alerts for a product. Includes denormalized productId for authorization independence. The {stockAlertId} is a unique identifier for each stock alert.",
+          "params": [
+            {
+              "name": "productId",
+              "description": "Unique identifier for the product."
+            },
+            {
+              "name": "stockAlertId",
+              "description": "Unique identifier for the stock alert."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/products/{productId}/stockMovements/{stockMovementId}",
+        "definition": {
+          "entityName": "StockMovement",
+          "schema": {
+            "$ref": "#/backend/entities/StockMovement"
+          },
+          "description": "Stores stock movement information for a product. Includes denormalized productId for authorization independence. The {stockMovementId} is a unique identifier for each stock movement.",
+          "params": [
+            {
+              "name": "productId",
+              "description": "Unique identifier for the product."
+            },
+            {
+              "name": "stockMovementId",
+              "description": "Unique identifier for the stock movement."
+            }
+          ]
         }
       },
       {
@@ -165,40 +276,76 @@
           "schema": {
             "$ref": "#/backend/entities/Location"
           },
-          "description": "Stores information about physical warehouse locations."
+          "description": "Stores location information. The {locationId} is a unique identifier for each location.",
+          "params": [
+            {
+              "name": "locationId",
+              "description": "Unique identifier for the location."
+            }
+          ]
         }
       },
       {
-        "path": "/loans/{loanId}",
+        "path": "/locations/{locationId}/stockLevels/{stockLevelId}",
         "definition": {
-          "entityName": "Loan",
+          "entityName": "StockLevel",
           "schema": {
-            "$ref": "#/backend/entities/Loan"
+            "$ref": "#/backend/entities/StockLevel"
           },
-          "description": "Stores records of all product loans."
-        }
-      },
-      {
-        "path": "/movements/{movementId}",
-        "definition": {
-            "entityName": "StockMovement",
-            "schema": {
-                "$ref": "#/backend/entities/StockMovement"
+          "description": "Stores stock level information for a location. Includes denormalized locationId for authorization independence.  The {stockLevelId} is a unique identifier for each stock level entry.",
+          "params": [
+            {
+              "name": "locationId",
+              "description": "Unique identifier for the location."
             },
-            "description": "Stores records of all stock movements, like adjustments or damages."
+            {
+              "name": "stockLevelId",
+              "description": "Unique identifier for the stock level entry."
+            }
+          ]
         }
       },
       {
-        "path": "/users/{userId}",
+        "path": "/locations/{locationId}/stockAlerts/{stockAlertId}",
         "definition": {
-          "entityName": "User",
+          "entityName": "StockAlert",
           "schema": {
-            "$ref": "#/backend/entities/User"
+            "$ref": "#/backend/entities/StockAlert"
           },
-          "description": "Stores user profiles and their specific permissions."
+          "description": "Stores stock alerts for a location. Includes denormalized locationId for authorization independence. The {stockAlertId} is a unique identifier for each stock alert.",
+          "params": [
+            {
+              "name": "locationId",
+              "description": "Unique identifier for the location."
+            },
+            {
+              "name": "stockAlertId",
+              "description": "Unique identifier for the stock alert."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/locations/{locationId}/stockMovements/{stockMovementId}",
+        "definition": {
+          "entityName": "StockMovement",
+          "schema": {
+            "$ref": "#/backend/entities/StockMovement"
+          },
+          "description": "Stores stock movement information for a location. Includes denormalized locationId for authorization independence. The {stockMovementId} is a unique identifier for each stock movement.",
+          "params": [
+            {
+              "name": "locationId",
+              "description": "Unique identifier for the location."
+            },
+            {
+              "name": "stockMovementId",
+              "description": "Unique identifier for the stock movement."
+            }
+          ]
         }
       }
     ],
-    "reasoning": "The Firestore structure for StockWise is designed to provide a secure and scalable inventory management system. It prioritizes authorization independence and simplifies security rules. Core data such as Products, Locations, Loans, and Movements are stored at the root for global access and simplified querying. User-specific data is stored under a /users collection to manage permissions and access control centrally."
+    "reasoning": "The Firestore structure for StockWise is designed to optimize for security, scalability, and query performance, while ensuring clear authorization rules and data integrity.\n\n**Authorization Independence:** Each collection's documents contain all necessary authorization data, eliminating the need for `get()` calls in security rules. This enables atomic operations and simplifies security logic.\n\n**Structural Segregation:** Collections are separated based on their security posture. Each collection houses data with uniform access requirements.\n\n**Access Modeling:** Path-based ownership is utilized for `stockLevels`, `stockAlerts`, and `stockMovements` nested under `products` and `locations`, ensuring a clear ownership hierarchy. \n\n**QAPs Support:** The segregation of data into collections with homogeneous security postures allows for secure list operations.  The path-based ownership model and inclusion of product and location ids in subcollections further allows secure `list` operations while preventing broad access to data.\n\nSpecifically, this design uses path-based ownership for associating `StockLevel`, `StockAlert`, and `StockMovement` with `Product` and `Location`.  This allows for efficient querying and management of data related to a specific product or location, and eliminates the need for complex authorization logic."
   }
 }
