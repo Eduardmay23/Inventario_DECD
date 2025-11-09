@@ -43,7 +43,7 @@ import { useState, useTransition, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/lib/types';
 import { useRouter } from 'next/navigation';
-import { useFirestore, useAuth, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirestore, useAuth, useCollection, useMemoFirebase, FirestorePermissionError, errorEmitter } from '@/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc, deleteDoc, collection } from 'firebase/firestore';
 import { FirebaseError } from 'firebase/app';
@@ -74,12 +74,14 @@ export default function SettingsClient() {
 
   const handleAddUser = (newUser: Omit<User, 'id' | 'role' | 'uid'>) => {
     startTransition(async () => {
-      try {
-        if (!auth || !firestore) {
-            throw new Error("Firebase services not available");
-        }
+      if (!auth || !firestore) {
+          toast({ variant: "destructive", title: "Error de Configuración", description: "Los servicios de Firebase no están disponibles." });
+          return;
+      }
 
-        const email = `${newUser.username}@${DUMMY_DOMAIN}`;
+      const email = `${newUser.username}@${DUMMY_DOMAIN}`;
+      
+      try {
         const { user: newAuthUser } = await createUserWithEmailAndPassword(auth, email, newUser.password!);
         
         const userDocData = {
@@ -91,15 +93,23 @@ export default function SettingsClient() {
         };
 
         const userDocRef = doc(firestore, "users", newAuthUser.uid);
-        await setDoc(userDocRef, userDocData);
-
-        toast({
-          title: "Usuario Creado",
-          description: `El usuario "${newUser.username}" ha sido creado con éxito.`,
-        });
-
-        setIsAddUserOpen(false);
-        router.refresh();
+        // This is a user-initiated action, so we await it, but handle errors via emitter
+        setDoc(userDocRef, userDocData)
+          .then(() => {
+              toast({
+                  title: "Usuario Creado",
+                  description: `El usuario "${newUser.username}" ha sido creado con éxito.`,
+              });
+              setIsAddUserOpen(false);
+          })
+          .catch(async (serverError) => {
+              const permissionError = new FirestorePermissionError({
+                  path: userDocRef.path,
+                  operation: 'create',
+                  requestResourceData: userDocData,
+              });
+              errorEmitter.emit('permission-error', permissionError);
+          });
 
       } catch (error: any) {
         let description = "No se pudo crear el usuario. Inténtalo de nuevo.";
@@ -126,22 +136,13 @@ export default function SettingsClient() {
 
   const handleUpdateUser = (userId: string, data: Partial<Omit<User, 'id' | 'password'>>) => {
      startTransition(async () => {
-        // Construct the payload explicitly to ensure all required fields are sent
-        const payload = {
-            name: data.name,
-            username: data.username,
-            role: data.role,
-            permissions: data.permissions,
-        };
-
-        const result = await updateUserAction(userId, payload);
+        const result = await updateUserAction(userId, data);
         if (result.success) {
            toast({
               title: "Usuario Actualizado",
               description: `Los datos del usuario han sido actualizados.`,
           });
           setIsEditUserOpen(false);
-          // router.refresh(); This might not be needed if useCollection updates automatically
         } else {
             toast({
               variant: "destructive",
@@ -167,26 +168,29 @@ export default function SettingsClient() {
 
   const confirmDelete = () => {
     if (userToDelete && firestore) {
-      startTransition(async () => {
-        try {
-            const userDocRef = doc(firestore, "users", userToDelete.uid);
-            await deleteDoc(userDocRef);
-            // NOTE: Deleting the auth user requires admin privileges and is complex to do securely from the client.
-            // For this app, we only delete the Firestore profile. The user won't be able to log in effectively.
-            toast({
-                title: "Usuario Eliminado",
-                description: `El perfil del usuario "${userToDelete.username}" ha sido eliminado.`,
+      startTransition(() => {
+        const userDocRef = doc(firestore, "users", userToDelete.uid);
+        
+        // NOTE: Deleting the auth user requires admin privileges and is complex to do securely from the client.
+        // For this app, we only delete the Firestore profile. The user won't be able to log in effectively.
+        deleteDoc(userDocRef)
+            .then(() => {
+                toast({
+                    title: "Usuario Eliminado",
+                    description: `El perfil del usuario "${userToDelete.username}" ha sido eliminado.`,
+                });
+            })
+            .catch(async (serverError) => {
+                const permissionError = new FirestorePermissionError({
+                    path: userDocRef.path,
+                    operation: 'delete',
+                });
+                errorEmitter.emit('permission-error', permissionError);
+            })
+            .finally(() => {
+                setIsDeleteConfirmOpen(false);
+                setUserToDelete(null);
             });
-        } catch (error: any) {
-            toast({
-                variant: "destructive",
-                title: "Error al Eliminar",
-                description: "No se pudo eliminar el perfil del usuario."
-            });
-        } finally {
-            setIsDeleteConfirmOpen(false);
-            setUserToDelete(null);
-        }
       });
     }
   }

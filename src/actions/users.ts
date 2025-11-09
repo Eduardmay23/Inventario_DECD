@@ -101,23 +101,21 @@ export async function updateUserAction(uid: string, data: Partial<Omit<User, 'id
     const firestore = getFirestore();
     const userDocRef = firestore.collection('users').doc(uid);
 
-    // 1. Auth Update (Only display name, password is not handled here)
+    // 1. Auth Update (Only display name)
     if (data.name) {
       await auth.updateUser(uid, { displayName: data.name });
     }
 
-    // 2. Firestore Document Update
+    // 2. Firestore Document Update Payload
     const firestoreUpdatePayload: { [key: string]: any } = {};
-    if (data.name) {
-      firestoreUpdatePayload.name = data.name;
-    }
-    // Username is not updatable, so we don't include it.
 
-    // Handle role and permissions
+    if (data.name) firestoreUpdatePayload.name = data.name;
+    
+    // Only update role and permissions if they are provided
     if (data.role) {
       firestoreUpdatePayload.role = data.role;
+      // If role is admin, force all permissions
       if (data.role === 'admin') {
-        // Admins always get all permissions
         firestoreUpdatePayload.permissions = ['dashboard', 'inventory', 'loans', 'reports', 'settings'];
       } else {
         // For 'user', save the specific permissions they have.
@@ -126,6 +124,7 @@ export async function updateUserAction(uid: string, data: Partial<Omit<User, 'id
       }
     } else if (data.permissions) {
       // If role isn't changing, but permissions are, update them.
+      // This handles the case where you only edit permissions for a 'user'
       firestoreUpdatePayload.permissions = data.permissions;
     }
     
@@ -145,8 +144,8 @@ export async function updateUserAction(uid: string, data: Partial<Omit<User, 'id
     let message = 'No se pudo actualizar el usuario.';
     if (error.code === 'auth/user-not-found') {
       message = 'El usuario no fue encontrado en el sistema de autenticación.';
-    } else {
-      message = error.message || message;
+    } else if (error.message) {
+      message = error.message;
     }
     return { error: message };
   }
