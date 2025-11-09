@@ -92,7 +92,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     // The useEffect hook will handle the redirection
   };
 
-  const getInitials = (name: string) => {
+  const getInitials = (name?: string) => {
     if (!name) return '';
     const names = name.split(' ');
     if (names.length > 1) {
