@@ -261,7 +261,7 @@ export default function SettingsClient() {
                     <TableBody>
                         {sortedUsers.map(user => (
                             <TableRow key={user.uid}>
-                                <TableCell className="font-medium">{user.role === 'admin' ? 'Administrador' : user.name}</TableCell>
+                                <TableCell className="font-medium">{user.name}</TableCell>
                                 <TableCell>{user.username}</TableCell>
                                 <TableCell>
                                   <div className="flex flex-row gap-1 flex-wrap">

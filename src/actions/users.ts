@@ -101,40 +101,31 @@ export async function updateUserAction(uid: string, data: Partial<Omit<User, 'id
     const firestore = getFirestore();
     const userDocRef = firestore.collection('users').doc(uid);
 
-    // 1. Firestore Document Update Payload - Make it robust.
     const firestoreUpdatePayload: { [key: string]: any } = {};
 
     if (data.name) {
       firestoreUpdatePayload.name = data.name;
     }
     
-    // Crucially, handle permissions. It should be an array.
-    // This ensures that even an empty array [] is saved correctly,
-    // effectively removing all permissions.
     if (data.permissions !== undefined) {
       firestoreUpdatePayload.permissions = Array.isArray(data.permissions) ? data.permissions : [];
     }
     
-    // Also handle role, if it's being passed.
     if (data.role) {
        firestoreUpdatePayload.role = data.role;
-       // If role is admin, force all permissions
        if (data.role === 'admin') {
          firestoreUpdatePayload.permissions = ['dashboard', 'inventory', 'loans', 'reports', 'settings'];
        }
     }
 
-    // Only perform the update if there's something to update.
     if (Object.keys(firestoreUpdatePayload).length > 0) {
       await userDocRef.update(firestoreUpdatePayload);
     }
     
-    // 2. Auth Update (Only display name, as other properties are sensitive)
     if (data.name) {
       await auth.updateUser(uid, { displayName: data.name });
     }
 
-    // 3. Custom Claims Update - Sync role if it was provided.
     if (data.role) {
       await auth.setCustomUserClaims(uid, { role: data.role });
     }

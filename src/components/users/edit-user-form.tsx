@@ -30,7 +30,6 @@ const permissions = [
 
 const formSchema = z.object({
   name: z.string().min(2, "El nombre debe tener al menos 2 caracteres."),
-  username: z.string().min(3, "El nombre de usuario debe tener al menos 3 caracteres.").regex(/^[a-zA-Z0-9_]+$/, "Solo se permiten letras, números y guiones bajos (_)."),
   permissions: z.array(z.string()),
 });
 
@@ -45,7 +44,6 @@ export function EditUserForm({ user, onSubmit, isPending }: EditUserFormProps) {
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: user.name || "",
-      username: user.username || "",
       permissions: user.permissions || [],
     },
   });
@@ -53,13 +51,11 @@ export function EditUserForm({ user, onSubmit, isPending }: EditUserFormProps) {
   useEffect(() => {
     form.reset({
       name: user.name,
-      username: user.username,
       permissions: user.permissions,
     });
   }, [user, form]);
   
   function handleFormSubmit(values: z.infer<typeof formSchema>) {
-    // Correctly build the submission data with ALL relevant form values.
     const dataToSubmit: Partial<Omit<User, 'id' | 'password' | 'uid'>> = {
       name: values.name,
       permissions: values.permissions, 
@@ -84,20 +80,13 @@ export function EditUserForm({ user, onSubmit, isPending }: EditUserFormProps) {
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="username"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Nombre de Usuario</FormLabel>
-              <FormControl>
-                <Input placeholder="Ej: juan.perez" {...field} disabled />
-              </FormControl>
-              <FormDescription>El nombre de usuario no se puede cambiar.</FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <FormItem>
+            <FormLabel>Nombre de Usuario</FormLabel>
+            <FormControl>
+                <Input value={user.username || ''} disabled />
+            </FormControl>
+            <FormDescription>El nombre de usuario no se puede cambiar.</FormDescription>
+        </FormItem>
 
         <FormItem>
           <div className="mb-4">
