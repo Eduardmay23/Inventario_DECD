@@ -24,25 +24,28 @@ import { doc, setDoc, getDoc, type Firestore } from 'firebase/firestore';
 const DUMMY_DOMAIN = 'decd.local';
 
 async function createInitialUsers(auth: Auth, firestore: Firestore) {
-  // Helper to ensure a user exists in both Auth and Firestore.
+  // Helper to ensure a user exists in both Auth and Firestore without duplicates.
   const ensureUserExists = async (username: string, password: string, userData: any) => {
     const email = `${username}@${DUMMY_DOMAIN}`;
     
     try {
-      // First, try to create the Auth user. This is the simplest way to check for Auth existence.
-      // It will fail with 'auth/email-already-in-use' if the auth user exists.
+      // Step 1: Create the Auth user. It will fail if it already exists, which is fine.
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       
-      // If we reach here, the user did NOT exist in Auth.
-      // Now, we must create their Firestore document.
+      // If we reach here, the auth user was created. Now create their Firestore document.
       const userDocRef = doc(firestore, "users", userCredential.user.uid);
-      await setDoc(userDocRef, { ...userData, uid: userCredential.user.uid });
-      
+      // Check if doc exists to prevent overwriting, though it shouldn't for a new auth user.
+      const docSnap = await getDoc(userDocRef);
+      if (!docSnap.exists()) {
+        await setDoc(userDocRef, { ...userData, uid: userCredential.user.uid });
+      }
+
     } catch (error: any) {
       if (error.code === 'auth/email-already-in-use') {
-        // The user already exists in Auth, which is fine.
-        // We do nothing more here, assuming their Firestore doc was created on the first run.
-        // This prevents re-creating or overwriting Firestore docs.
+        // This is expected after the first run. The auth user exists.
+        // We DO NOT attempt to create the firestore doc here, as we can't get the UID easily.
+        // We rely on the fact that it was created correctly on the very first run.
+        // This logic is simplified to prevent race conditions or duplicate doc creations.
       } else {
         // Log other unexpected errors during initial setup.
         console.error(`Error ensuring initial user ${username}:`, error);
@@ -64,7 +67,7 @@ async function createInitialUsers(auth: Auth, firestore: Firestore) {
     permissions: ['dashboard', 'inventory', 'loans'],
   };
 
-  // Create both users. If they exist in Auth, the function will gracefully skip creation.
+  // Create both users. The function is designed to be safe to call multiple times.
   await ensureUserExists('admin', 'password123', adminUserData);
   await ensureUserExists('educacion', '123456', educacionUserData);
 }
@@ -95,10 +98,10 @@ export default function LoginPage() {
 
     try {
       // First, silently ensure the initial users exist.
-      // This is idempotent and safe to run on every login.
+      // This is now safe to run on every login attempt.
       await createInitialUsers(auth, firestore);
       
-      // After ensuring users might exist, always attempt to sign in.
+      // After ensuring users exist, attempt to sign in.
       await signInWithEmailAndPassword(auth, email, password);
       router.replace('/dashboard');
 
