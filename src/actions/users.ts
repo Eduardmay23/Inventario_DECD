@@ -6,13 +6,13 @@ import { getAuth, UserRecord } from 'firebase-admin/auth';
 import { initFirebaseAdminApp } from '@/firebase/server';
 import type { User } from '@/lib/types';
 
-// Initialize Firebase Admin SDK once when the module is loaded
+// Inicializa Firebase Admin SDK una sola vez cuando el módulo se carga
 initFirebaseAdminApp();
 
 /**
- * Ensures that the initial 'admin' and 'educacion' users exist in both
- * Firebase Auth and Firestore, creating them only if they are missing.
- * This server-side action is idempotent and safe to call multiple times.
+ * Garantiza que los usuarios iniciales 'admin' y 'educacion' existan tanto en
+ * Firebase Auth como en Firestore, creándolos solo si faltan.
+ * Esta acción del servidor es idempotente y segura para llamar varias veces.
  */
 export async function ensureInitialUsers() {
     try {
@@ -22,44 +22,44 @@ export async function ensureInitialUsers() {
         const processUser = async (userData: any) => {
             let userRecord: UserRecord;
             
-            // 1. Get user from Auth. Create if not found.
+            // 1. Obtener usuario de Auth. Crear si no se encuentra.
             try {
                 userRecord = await auth.getUserByEmail(userData.email);
             } catch (error: any) {
                 if (error.code === 'auth/user-not-found') {
-                    console.log(`User ${userData.email} not found in Auth, creating...`);
+                    console.log(`Usuario ${userData.email} no encontrado en Auth, creando...`);
                     userRecord = await auth.createUser({
                         email: userData.email,
                         password: userData.password,
                         displayName: userData.displayName,
                     });
-                     console.log(`User ${userData.email} created in Auth with UID: ${userRecord.uid}`);
+                     console.log(`Usuario ${userData.email} creado en Auth con UID: ${userRecord.uid}`);
                 } else {
-                    // Re-throw other auth errors
+                    // Volver a lanzar otros errores de autenticación
                     throw error;
                 }
             }
             
             const uid = userRecord.uid;
 
-            // 2. Set Custom Claims in Auth (idempotent)
+            // 2. Establecer Custom Claims en Auth (idempotente)
             await auth.setCustomUserClaims(uid, userData.customClaims);
 
-            // 3. Check if user profile exists in Firestore. Create ONLY if it doesn't exist.
+            // 3. Comprobar si el perfil de usuario existe en Firestore. Crear SOLO si no existe.
             const userDocRef = firestore.collection('users').doc(uid);
             const docSnap = await userDocRef.get();
 
             if (!docSnap.exists) {
-                console.log(`User profile for UID ${uid} not found in Firestore, creating...`);
-                // Ensure the UID from Auth is stored in the document.
+                console.log(`Perfil de usuario para UID ${uid} no encontrado en Firestore, creando...`);
+                // Asegurarse de que el UID de Auth se almacena en el documento.
                 const profileData = {
                   ...userData.firestoreProfile,
                   uid: uid,
                 };
                 await userDocRef.set(profileData);
-                console.log(`User profile for UID ${uid} created in Firestore.`);
+                console.log(`Perfil de usuario para UID ${uid} creado en Firestore.`);
             } else {
-                 console.log(`User profile for UID ${uid} already exists in Firestore. No action needed.`);
+                 console.log(`Perfil de usuario para UID ${uid} ya existe en Firestore. No se necesita acción.`);
             }
         };
 
@@ -95,18 +95,18 @@ export async function ensureInitialUsers() {
         return { success: true };
 
     } catch (error: any) {
-        console.error("Error ensuring initial users:", error);
-        return { error: 'Failed to set up initial users on the server.' };
+        console.error("Error al garantizar los usuarios iniciales:", error);
+        return { error: 'No se pudieron configurar los usuarios iniciales en el servidor.' };
     }
 }
 
 
 /**
- * Updates a user's details in both Firebase Auth and Firestore.
- * This is a server-side action to ensure security.
- * @param uid The UID of the user to update.
- * @param data The user data to update.
- * @returns An object indicating success or an error message.
+ * Actualiza los detalles de un usuario tanto en Firebase Auth como en Firestore.
+ * Esta es una acción del servidor para garantizar la seguridad.
+ * @param uid El UID del usuario a actualizar.
+ * @param data Los datos del usuario a actualizar.
+ * @returns Un objeto que indica éxito o un mensaje de error.
  */
 export async function updateUserAction(uid: string, data: Partial<Omit<User, 'id' | 'uid' | 'password'>>) {
   try {
@@ -116,41 +116,41 @@ export async function updateUserAction(uid: string, data: Partial<Omit<User, 'id
 
     const firestoreUpdatePayload: { [key: string]: any } = {};
 
-    // Build the payload for Firestore update
+    // Construir el payload para la actualización de Firestore
     if (data.name) {
       firestoreUpdatePayload.name = data.name;
     }
     
-    // Always update permissions. If it's undefined or null, it becomes an empty array.
+    // Siempre actualizar los permisos. Si es undefined o null, se convierte en un array vacío.
     firestoreUpdatePayload.permissions = Array.isArray(data.permissions) ? data.permissions : [];
     
-    // This logic handles a potential 'role' field, although it's not currently in the UI.
+    // Esta lógica maneja un posible campo 'role', aunque no está actualmente en la UI.
     if (data.role) {
        firestoreUpdatePayload.role = data.role;
-       // Admins get all permissions.
+       // Los administradores obtienen todos los permisos.
        if (data.role === 'admin') {
          firestoreUpdatePayload.permissions = ['dashboard', 'inventory', 'loans', 'reports', 'settings'];
        }
     }
 
-    // Perform the Firestore update if there's anything to update
+    // Realizar la actualización de Firestore si hay algo que actualizar
     if (Object.keys(firestoreUpdatePayload).length > 0) {
       await userDocRef.update(firestoreUpdatePayload);
     }
     
-    // Update Auth display name if provided
+    // Actualizar el nombre de visualización de Auth si se proporciona
     if (data.name) {
       await auth.updateUser(uid, { displayName: data.name });
     }
 
-    // Update Auth custom claims (role) if provided
+    // Actualizar los custom claims de Auth (rol) si se proporciona
     if (data.role) {
       await auth.setCustomUserClaims(uid, { role: data.role });
     }
 
     return { success: true };
   } catch (error: any) {
-    console.error("Error updating user:", error);
+    console.error("Error al actualizar el usuario:", error);
     let message = 'No se pudo actualizar el usuario.';
     if (error.code === 'auth/user-not-found') {
       message = 'El usuario no fue encontrado en el sistema de autenticación.';
