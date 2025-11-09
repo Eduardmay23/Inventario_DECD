@@ -46,12 +46,12 @@ export async function ensureInitialUsers() {
         const processUser = async (userData: typeof adminUserData) => {
             let uid: string;
             try {
-                // 1. Check if user exists in Firebase Auth
+                // 1. Check if user exists in Firebase Auth by email.
                 const userRecord = await auth.getUserByEmail(userData.email);
                 uid = userRecord.uid;
             } catch (error: any) {
                 if (error.code === 'auth/user-not-found') {
-                    // 2. If not, create them in Firebase Auth
+                    // 2. If not, create them in Firebase Auth.
                     const newUserRecord = await auth.createUser({
                         email: userData.email,
                         password: userData.password,
@@ -59,25 +59,25 @@ export async function ensureInitialUsers() {
                     });
                     uid = newUserRecord.uid;
                 } else {
-                    // Re-throw other auth errors
+                    // Re-throw other auth errors.
                     throw error;
                 }
             }
             
-            // 3. Set custom claims for the user (idempotent)
+            // 3. Set custom claims for the user (idempotent).
             await auth.setCustomUserClaims(uid, userData.customClaims);
 
-            // 4. Check if a profile exists for this UID in Firestore
+            // 4. Check if a profile exists for this UID in Firestore.
             const userDocRef = firestore.collection('users').doc(uid);
             const docSnap = await userDocRef.get();
 
             if (!docSnap.exists) {
-                // 5. If not, create the Firestore profile
+                // 5. If not, create the Firestore profile.
                 await userDocRef.set({ ...userData.firestoreProfile, uid });
             }
         };
 
-        // Process both users sequentially to avoid race conditions
+        // Process both users sequentially.
         await processUser(adminUserData);
         await processUser(educacionUserData);
 
@@ -106,19 +106,19 @@ export async function updateUserAction(uid: string, data: Partial<Omit<User, 'id
 
     const firestoreUpdatePayload: { [key: string]: any } = {};
 
-    // Always update the name if provided
+    // Build the payload for Firestore update
     if (data.name) {
       firestoreUpdatePayload.name = data.name;
     }
     
-    // Always update permissions. If it's undefined (no boxes checked), it becomes an empty array.
+    // Always update permissions. If it's undefined or null, it becomes an empty array.
     firestoreUpdatePayload.permissions = Array.isArray(data.permissions) ? data.permissions : [];
     
     // This logic handles a potential 'role' field, although it's not currently in the UI.
     if (data.role) {
        firestoreUpdatePayload.role = data.role;
+       // Admins get all permissions.
        if (data.role === 'admin') {
-         // Admin role always gets all permissions.
          firestoreUpdatePayload.permissions = ['dashboard', 'inventory', 'loans', 'reports', 'settings'];
        }
     }

@@ -93,7 +93,15 @@ export default function SettingsClient() {
         };
 
         const userDocRef = doc(firestore, "users", newAuthUser.uid);
-        await setDoc(userDocRef, userDocData);
+        setDoc(userDocRef, userDocData)
+            .catch(async (serverError) => {
+                const permissionError = new FirestorePermissionError({
+                    path: userDocRef.path,
+                    operation: 'create',
+                    requestResourceData: userDocData,
+                });
+                errorEmitter.emit('permission-error', permissionError);
+            });
         
         toast({
             title: "Usuario Creado",
@@ -110,22 +118,11 @@ export default function SettingsClient() {
             description = 'La contraseña es demasiado débil. Debe tener al menos 6 caracteres.';
           }
         }
-        
-        const isPermissionError = error.code === 'permission-denied';
-        if(isPermissionError){
-            const userDocRef = doc(firestore, "users", "new_user_placeholder");
-            const permissionError = new FirestorePermissionError({
-                path: userDocRef.path,
-                operation: 'create',
-            });
-            errorEmitter.emit('permission-error', permissionError);
-        } else {
-            toast({
-              variant: "destructive",
-              title: "Error al Crear Usuario",
-              description,
-            });
-        }
+        toast({
+            variant: "destructive",
+            title: "Error al Crear Usuario",
+            description,
+        });
       }
     });
   };

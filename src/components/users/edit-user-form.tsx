@@ -56,6 +56,7 @@ export function EditUserForm({ user, onSubmit, isPending }: EditUserFormProps) {
   }, [user, form]);
   
   function handleFormSubmit(values: z.infer<typeof formSchema>) {
+    // Construct the payload with all form values
     const dataToSubmit: Partial<Omit<User, 'id' | 'password' | 'uid'>> = {
       name: values.name,
       permissions: values.permissions, 
