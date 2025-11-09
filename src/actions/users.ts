@@ -121,6 +121,7 @@ export async function updateUserAction(uid: string, data: Partial<Omit<User, 'id
     
     if (data.role !== undefined) {
        firestoreUpdatePayload.role = data.role;
+       // Si el rol cambia a admin, se le otorgan todos los permisos
        if (data.role === 'admin') {
          firestoreUpdatePayload.permissions = ['dashboard', 'inventory', 'loans', 'reports', 'settings'];
        }
@@ -153,3 +154,4 @@ export async function updateUserAction(uid: string, data: Partial<Omit<User, 'id
     return { error: message };
   }
 }
+
