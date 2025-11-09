@@ -125,7 +125,7 @@ export async function updateUserAction(uid: string, data: Partial<Omit<User, 'id
     } else if (data.permissions) {
       // If role isn't changing, but permissions are, update them.
       // This handles the case where you only edit permissions for a 'user'
-      firestoreUpdatePayload.permissions = data.permissions;
+      firestoreUpdatepdatePayload.permissions = data.permissions;
     }
     
     if (Object.keys(firestoreUpdatePayload).length > 0) {

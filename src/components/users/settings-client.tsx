@@ -93,7 +93,6 @@ export default function SettingsClient() {
         };
 
         const userDocRef = doc(firestore, "users", newAuthUser.uid);
-        // This is a user-initiated action, so we await it, but handle errors via emitter
         setDoc(userDocRef, userDocData)
           .then(() => {
               toast({
@@ -255,7 +254,6 @@ export default function SettingsClient() {
                         <TableRow>
                             <TableHead>Nombre</TableHead>
                             <TableHead>Usuario</TableHead>
-                            <TableHead>Rol</TableHead>
                             <TableHead>Permisos</TableHead>
                             <TableHead className='text-right'>Acciones</TableHead>
                         </TableRow>
@@ -263,13 +261,8 @@ export default function SettingsClient() {
                     <TableBody>
                         {sortedUsers.map(user => (
                             <TableRow key={user.uid}>
-                                <TableCell className="font-medium">{user.name}</TableCell>
+                                <TableCell className="font-medium">{user.role === 'admin' ? 'Administrador' : user.name}</TableCell>
                                 <TableCell>{user.username}</TableCell>
-                                <TableCell>
-                                  <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
-                                    {user.role === 'admin' ? 'Admin' : 'Usuario'}
-                                  </Badge>
-                                </TableCell>
                                 <TableCell>
                                   <div className="flex flex-row gap-1 flex-wrap">
                                     {user.role === 'admin' ? (
@@ -286,7 +279,7 @@ export default function SettingsClient() {
                                     variant="ghost" 
                                     size="icon" 
                                     onClick={() => openEditDialog(user)}
-                                    disabled={isPending}
+                                    disabled={isPending || user.role === 'admin'}
                                     aria-label="Editar usuario"
                                   >
                                     <Edit className="h-4 w-4" />
@@ -295,7 +288,7 @@ export default function SettingsClient() {
                                     variant="ghost" 
                                     size="icon" 
                                     onClick={() => openDeleteDialog(user)}
-                                    disabled={user.username === 'admin' || isPending}
+                                    disabled={user.role === 'admin' || isPending}
                                     aria-label="Eliminar usuario"
                                     className="text-destructive hover:text-destructive"
                                   >
@@ -318,8 +311,9 @@ export default function SettingsClient() {
                 </CardHeader>
                 <CardContent>
                     <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
-                      <li>La actualización de contraseñas no está disponible en esta pantalla por razones de seguridad. Debe hacerse desde la <strong>Consola de Firebase</strong>.</li>
-                       <li>La eliminación de usuarios solo borra su perfil de la base de datos (Firestore). Para una eliminación completa, se debe hacer desde la <strong>Consola de Firebase</strong>.</li>
+                      <li>El usuario **Administrador** tiene acceso a todas las secciones y no puede ser editado o eliminado.</li>
+                      <li>La actualización de contraseñas no está disponible en esta pantalla por razones de seguridad.</li>
+                       <li>La eliminación de usuarios solo borra su perfil de la base de datos (Firestore). Para una eliminación completa, se debe hacer desde la **Consola de Firebase**.</li>
                     </ul>
                 </CardContent>
             </Card>

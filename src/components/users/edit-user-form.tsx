@@ -33,7 +33,7 @@ const permissions = [
   { id: 'inventory', label: 'Gestionar Inventario' },
   { id: 'loans', label: 'Gestionar Préstamos' },
   { id: 'reports', label: 'Ver Reportes' },
-  { id: 'settings', label: 'Ver Configuración' },
+  // { id: 'settings', label: 'Ver Configuración' }, // Removed as it's admin-only
 ] as const;
 
 const formSchema = z.object({
@@ -77,7 +77,7 @@ export function EditUserForm({ user, onSubmit, isPending }: EditUserFormProps) {
   
   useEffect(() => {
     if (role === 'admin') {
-      form.setValue('permissions', permissions.map(p => p.id));
+      form.setValue('permissions', ['dashboard', 'inventory', 'loans', 'reports', 'settings']);
     }
   }, [role, form]);
 
@@ -150,49 +150,51 @@ export function EditUserForm({ user, onSubmit, isPending }: EditUserFormProps) {
           )}
         />
 
-        <FormItem>
-          <div className="mb-4">
-            <FormLabel className="text-base">Permisos de Acceso</FormLabel>
-            <FormDescription>
-              Selecciona a qué secciones puede acceder el usuario.
-            </FormDescription>
-          </div>
-          {permissions.map((item) => (
-            <FormField
-              key={item.id}
-              control={form.control}
-              name="permissions"
-              render={({ field }) => {
-                return (
-                  <FormItem
-                    key={item.id}
-                    className="flex flex-row items-start space-x-3 space-y-0"
-                  >
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value?.includes(item.id)}
-                        onCheckedChange={(checked) => {
-                          return checked
-                            ? field.onChange([...field.value, item.id])
-                            : field.onChange(
-                                field.value?.filter(
-                                  (value) => value !== item.id
-                                )
-                              );
-                        }}
-                        disabled={role === 'admin'}
-                      />
-                    </FormControl>
-                    <FormLabel className="font-normal">
-                      {item.label}
-                    </FormLabel>
-                  </FormItem>
-                );
-              }}
-            />
-          ))}
-          <FormMessage />
-        </FormItem>
+        {role === 'user' && (
+          <FormItem>
+            <div className="mb-4">
+              <FormLabel className="text-base">Permisos de Acceso</FormLabel>
+              <FormDescription>
+                Selecciona a qué secciones puede acceder el usuario.
+              </FormDescription>
+            </div>
+            {permissions.map((item) => (
+              <FormField
+                key={item.id}
+                control={form.control}
+                name="permissions"
+                render={({ field }) => {
+                  return (
+                    <FormItem
+                      key={item.id}
+                      className="flex flex-row items-start space-x-3 space-y-0"
+                    >
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value?.includes(item.id)}
+                          onCheckedChange={(checked) => {
+                            return checked
+                              ? field.onChange([...field.value, item.id])
+                              : field.onChange(
+                                  field.value?.filter(
+                                    (value) => value !== item.id
+                                  )
+                                );
+                          }}
+                          disabled={role === 'admin'}
+                        />
+                      </FormControl>
+                      <FormLabel className="font-normal">
+                        {item.label}
+                      </FormLabel>
+                    </FormItem>
+                  );
+                }}
+              />
+            ))}
+            <FormMessage />
+          </FormItem>
+        )}
          {role === 'admin' && <FormDescription className="mt-2 text-xs">El administrador siempre tiene todos los permisos.</FormDescription>}
         
         <Button type="submit" className="w-full" disabled={isPending}>
