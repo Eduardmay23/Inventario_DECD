@@ -9,7 +9,7 @@ import type { User } from '@/lib/types';
 /**
  * Ensures that the initial 'admin' and 'educacion' users exist in both
  * Firebase Auth and Firestore, creating them only if they are missing.
- * This server-side action is designed to be idempotent and safe to call multiple times.
+ * This server-side action is idempotent and safe to call multiple times.
  */
 export async function ensureInitialUsers() {
     try {
@@ -19,6 +19,7 @@ export async function ensureInitialUsers() {
 
         const processUser = async (userData: any) => {
             let userRecord;
+            // 1. Check if user exists in Auth. Create if not.
             try {
                 userRecord = await auth.getUserByEmail(userData.email);
             } catch (error: any) {
@@ -29,13 +30,17 @@ export async function ensureInitialUsers() {
                         displayName: userData.displayName,
                     });
                 } else {
+                    // Re-throw other auth errors
                     throw error;
                 }
             }
-
+            
             const uid = userRecord.uid;
+
+            // 2. Set Custom Claims in Auth
             await auth.setCustomUserClaims(uid, userData.customClaims);
 
+            // 3. Check if user profile exists in Firestore. Create if not.
             const userDocRef = firestore.collection('users').doc(uid);
             const docSnap = await userDocRef.get();
 
