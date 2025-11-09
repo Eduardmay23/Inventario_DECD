@@ -119,11 +119,13 @@ export async function updateUserAction(uid: string, data: Partial<Omit<User, 'id
     if (data.username) {
         firestoreUpdatePayload.username = data.username;
     }
+    // Always include permissions in the payload if they are provided.
     if (data.permissions) {
         firestoreUpdatePayload.permissions = data.permissions;
     }
     if (data.role) {
         firestoreUpdatePayload.role = data.role;
+        // If role is updated, also update the custom claim
         await auth.setCustomUserClaims(uid, { role: data.role });
     }
     
@@ -146,4 +148,3 @@ export async function updateUserAction(uid: string, data: Partial<Omit<User, 'id
     return { error: message };
   }
 }
-
