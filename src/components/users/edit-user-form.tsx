@@ -41,8 +41,6 @@ type EditUserFormProps = {
 };
 
 export function EditUserForm({ user, onSubmit, isPending }: EditUserFormProps) {
-  const isPrincipalAdmin = user.username === 'admin';
-
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -64,8 +62,7 @@ export function EditUserForm({ user, onSubmit, isPending }: EditUserFormProps) {
     // Correctly build the submission data with ALL relevant form values.
     const dataToSubmit: Partial<Omit<User, 'id' | 'password' | 'uid'>> = {
       name: values.name,
-      // Pass permissions, which could be an empty array.
-      permissions: values.permissions || [], 
+      permissions: values.permissions, 
     };
     
     onSubmit(dataToSubmit);
