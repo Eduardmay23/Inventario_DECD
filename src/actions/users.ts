@@ -54,7 +54,7 @@ export async function ensureInitialUsers() {
                 // Asegurarse de que el UID de Auth se almacena en el documento.
                 const profileData = {
                   ...userData.firestoreProfile,
-                  uid: uid,
+                  uid: uid, // Este es el campo clave que faltaba
                 };
                 await userDocRef.set(profileData);
                 console.log(`Perfil de usuario para UID ${uid} creado en Firestore.`);
