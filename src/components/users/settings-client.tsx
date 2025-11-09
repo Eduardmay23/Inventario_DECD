@@ -47,7 +47,6 @@ import { useFirestore, useAuth, useCollection, useMemoFirebase, FirestorePermiss
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc, deleteDoc, collection } from 'firebase/firestore';
 import { FirebaseError } from 'firebase/app';
-import { updateUserAction } from '@/actions/users';
 
 
 const DUMMY_DOMAIN = 'decd.local';
@@ -134,20 +133,31 @@ export default function SettingsClient() {
 
   const handleUpdateUser = (userId: string, data: Partial<Omit<User, 'id' | 'password'>>) => {
      startTransition(async () => {
-        const result = await updateUserAction(userId, data);
-        if (result.success) {
-           toast({
-              title: "Usuario Actualizado",
-              description: `Los datos del usuario han sido actualizados.`,
-          });
-          setIsEditUserOpen(false);
-        } else {
-            toast({
-              variant: "destructive",
-              title: "Error al Actualizar",
-              description: result.error || "No se pudo actualizar el usuario.",
-          });
-        }
+        if (!firestore) return;
+        const userDocRef = doc(firestore, 'users', userId);
+
+        // We only update the fields that can be changed from the form
+        const updatePayload = {
+            name: data.name,
+            permissions: data.permissions,
+        };
+
+        setDoc(userDocRef, updatePayload, { merge: true })
+            .then(() => {
+                toast({
+                    title: "Usuario Actualizado",
+                    description: `Los datos del usuario han sido guardados.`,
+                });
+                setIsEditUserOpen(false);
+            })
+            .catch(async (serverError) => {
+                const permissionError = new FirestorePermissionError({
+                    path: userDocRef.path,
+                    operation: 'update',
+                    requestResourceData: updatePayload,
+                });
+                errorEmitter.emit('permission-error', permissionError);
+            });
     });
   };
 
