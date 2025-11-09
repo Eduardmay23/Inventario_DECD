@@ -17,6 +17,33 @@ export async function ensureInitialUsers() {
         const auth = getAuth();
         const firestore = getFirestore();
 
+        const processUser = async (userData: any) => {
+            let userRecord;
+            try {
+                userRecord = await auth.getUserByEmail(userData.email);
+            } catch (error: any) {
+                if (error.code === 'auth/user-not-found') {
+                    userRecord = await auth.createUser({
+                        email: userData.email,
+                        password: userData.password,
+                        displayName: userData.displayName,
+                    });
+                } else {
+                    throw error;
+                }
+            }
+
+            const uid = userRecord.uid;
+            await auth.setCustomUserClaims(uid, userData.customClaims);
+
+            const userDocRef = firestore.collection('users').doc(uid);
+            const docSnap = await userDocRef.get();
+
+            if (!docSnap.exists) {
+                await userDocRef.set({ ...userData.firestoreProfile, uid });
+            }
+        };
+
         const adminUserData = {
             email: 'admin@decd.local',
             password: 'password123',
@@ -43,41 +70,6 @@ export async function ensureInitialUsers() {
             },
         };
         
-        const processUser = async (userData: typeof adminUserData) => {
-            let uid: string;
-            try {
-                // 1. Check if user exists in Firebase Auth by email.
-                const userRecord = await auth.getUserByEmail(userData.email);
-                uid = userRecord.uid;
-            } catch (error: any) {
-                if (error.code === 'auth/user-not-found') {
-                    // 2. If not, create them in Firebase Auth.
-                    const newUserRecord = await auth.createUser({
-                        email: userData.email,
-                        password: userData.password,
-                        displayName: userData.displayName,
-                    });
-                    uid = newUserRecord.uid;
-                } else {
-                    // Re-throw other auth errors.
-                    throw error;
-                }
-            }
-            
-            // 3. Set custom claims for the user (idempotent).
-            await auth.setCustomUserClaims(uid, userData.customClaims);
-
-            // 4. Check if a profile exists for this UID in Firestore.
-            const userDocRef = firestore.collection('users').doc(uid);
-            const docSnap = await userDocRef.get();
-
-            if (!docSnap.exists) {
-                // 5. If not, create the Firestore profile.
-                await userDocRef.set({ ...userData.firestoreProfile, uid });
-            }
-        };
-
-        // Process both users sequentially.
         await processUser(adminUserData);
         await processUser(educacionUserData);
 
