@@ -24,26 +24,31 @@ import { doc, setDoc, getDoc, type Firestore } from 'firebase/firestore';
 const DUMMY_DOMAIN = 'decd.local';
 
 async function createInitialUsers(auth: Auth, firestore: Firestore) {
-  const adminEmail = `admin@${DUMMY_DOMAIN}`;
-  const educacionEmail = `educacion@${DUMMY_DOMAIN}`;
-
-  // Helper function to create a user only if they don't exist
-  const createUserIfNotExists = async (email: string, password: string, userData: any) => {
+  // Helper to ensure a user exists in both Auth and Firestore, but only if they don't exist in Firestore.
+  const ensureUserExists = async (username: string, password: string, userData: any) => {
+    const email = `${username}@${DUMMY_DOMAIN}`;
+    
     try {
-      // Try to create the user. This will fail if the email is already in use.
+      // First, try to create the Auth user. This is the simplest way to check for Auth existence.
+      // It will fail with 'auth/email-already-in-use' if the auth user exists.
       const { user: authUser } = await createUserWithEmailAndPassword(auth, email, password);
-      // If creation succeeds, set their profile in Firestore.
+      
+      // If we reach here, the user did NOT exist in Auth.
+      // Now, we must create their Firestore document.
       await setDoc(doc(firestore, "users", authUser.uid), { ...userData, uid: authUser.uid });
+      
     } catch (error: any) {
-      // If the user already exists, we can ignore the error.
-      // Otherwise, we should log it for debugging.
-      if (error.code !== 'auth/email-already-in-use') {
-        console.error(`Error creating initial user ${email}:`, error);
+      if (error.code === 'auth/email-already-in-use') {
+        // The user already exists in Auth, which is fine.
+        // We do nothing more here, assuming their Firestore doc was created on the first run.
+        // This prevents re-creating or overwriting Firestore docs.
+      } else {
+        // Log other unexpected errors during initial setup.
+        console.error(`Error ensuring initial user ${username}:`, error);
       }
     }
   };
 
-  // Define admin user data
   const adminUserData = {
     name: 'Administrador',
     username: 'admin',
@@ -51,7 +56,6 @@ async function createInitialUsers(auth: Auth, firestore: Firestore) {
     permissions: ['dashboard', 'inventory', 'loans', 'reports', 'settings'],
   };
 
-  // Define educacion user data
   const educacionUserData = {
     name: 'Centro educativo',
     username: 'educacion',
@@ -59,9 +63,9 @@ async function createInitialUsers(auth: Auth, firestore: Firestore) {
     permissions: ['dashboard', 'inventory', 'loans'],
   };
 
-  // Create both users if they don't exist
-  await createUserIfNotExists(adminEmail, 'password123', adminUserData);
-  await createUserIfNotExists(educacionEmail, '123456', educacionUserData);
+  // Create both users. If they exist in Auth, the function will gracefully skip creation.
+  await ensureUserExists('admin', 'password123', adminUserData);
+  await ensureUserExists('educacion', '123456', educacionUserData);
 }
 
 
@@ -89,8 +93,8 @@ export default function LoginPage() {
     const email = `${username}@${DUMMY_DOMAIN}`;
 
     try {
-      // First, silently attempt to create the initial users.
-      // This will only succeed the very first time and will fail silently if they already exist.
+      // First, silently ensure the initial users exist.
+      // This is idempotent and safe to run on every login.
       await createInitialUsers(auth, firestore);
       
       // After ensuring users might exist, always attempt to sign in.
