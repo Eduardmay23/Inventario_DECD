@@ -21,7 +21,7 @@ import { FirebaseError } from 'firebase/app';
 import { doc, setDoc } from 'firebase/firestore';
 
 
-const DUMMY_DOMAIN = 'stockwise.local';
+const DUMMY_DOMAIN = 'decd.local';
 
 async function createInitialUsers(auth: any, firestore: any) {
     try {
@@ -120,7 +120,7 @@ export default function LoginPage() {
       <div className="mx-auto flex w-full max-w-sm flex-col items-center justify-center space-y-6">
         <div className="flex items-center gap-2 text-foreground">
           <Boxes className="size-8 text-primary" />
-          <h1 className="text-2xl font-semibold">StockWise</h1>
+          <h1 className="text-2xl font-semibold">D.E.C.D</h1>
         </div>
         <Card className="w-full">
           <CardHeader>

@@ -1,5 +1,5 @@
 
-# Reporte Técnico del Sistema: StockWise
+# Reporte Técnico del Sistema: Dirección de Educación, Cultura y Deporte
 
 **Versión:** 1.0
 **Fecha:** 24 de Mayo de 2024
@@ -9,15 +9,15 @@
 
 ## 1.0 Resumen Ejecutivo
 
-**StockWise** es una aplicación web de gestión de inventario, diseñada para proporcionar un control centralizado, seguro y eficiente de activos. El sistema va más allá del simple seguimiento de stock, incorporando gestión de usuarios por roles, un sistema de préstamos y un módulo de análisis basado en Inteligencia Artificial para la generación de reportes ejecutivos.
+La aplicación de gestión para la **Dirección de Educación, Cultura y Deporte** es un sistema web de gestión de inventario, diseñado para proporcionar un control centralizado, seguro y eficiente de activos. El sistema va más allá del simple seguimiento de stock, incorporando gestión de usuarios por roles, un sistema de préstamos y un módulo de análisis basado en Inteligencia Artificial para la generación de reportes ejecutivos.
 
-Construido sobre una pila tecnológica moderna que incluye **Next.js**, **Firebase** y **Google Genkit**, StockWise garantiza una experiencia de usuario en tiempo real, una alta escalabilidad y capacidades de análisis avanzadas.
+Construido sobre una pila tecnológica moderna que incluye **Next.js**, **Firebase** y **Google Genkit**, el sistema garantiza una experiencia de usuario en tiempo real, una alta escalabilidad y capacidades de análisis avanzadas.
 
 ---
 
 ## 2.0 Arquitectura del Sistema y Pila Tecnológica
 
-La arquitectura de StockWise se centra en un modelo de cliente pesado (cliente-servidor), donde la lógica principal de negocio y las interacciones con la base de datos se gestionan directamente desde el cliente, aprovechando al máximo los servicios en la nube de Firebase.
+La arquitectura de la aplicación se centra en un modelo de cliente pesado (cliente-servidor), donde la lógica principal de negocio y las interacciones con la base de datos se gestionan directamente desde el cliente, aprovechando al máximo los servicios en la nube de Firebase.
 
 - **Framework Frontend:** **Next.js 15 (App Router)** y **React**. Proporciona renderizado del lado del servidor (SSR) y del cliente (CSR), optimizando el rendimiento y la organización del código en un modelo de componentes.
 - **Base de Datos:** **Cloud Firestore**. Actúa como la base de datos principal. Su naturaleza en tiempo real permite que la interfaz de usuario se actualice instantáneamente ante cualquier cambio en los datos, sin necesidad de intervención del usuario.
@@ -34,7 +34,7 @@ La arquitectura de StockWise se centra en un modelo de cliente pesado (cliente-s
 
 ### 3.1 Autenticación y Control de Acceso
 
-1.  **Inicio de Sesión:** El usuario introduce un `username` y `password`. El sistema concatena el `username` con un dominio ficticio (`@stockwise.local`) para autenticarse contra Firebase Authentication.
+1.  **Inicio de Sesión:** El usuario introduce un `username` y `password`. El sistema concatena el `username` con un dominio ficticio (`@decd.local`) para autenticarse contra Firebase Authentication.
 2.  **Verificación de Perfil y Permisos:** Una vez autenticado, el `layout` principal (`src/app/(dashboard)/layout.tsx`) consulta la colección `users` en Firestore usando el UID del usuario. Este documento contiene su rol (`admin` o `user`) y un array de `permissions`.
 3.  **Acceso Condicional:** El layout compara los permisos del usuario con la ruta a la que intenta acceder. Si no hay coincidencia, se renderiza una vista de "Acceso Denegado". El rol de `admin` tiene acceso implícito a todas las rutas.
 
@@ -87,5 +87,4 @@ La aplicación integra la librería **xlsx** para permitir la exportación de da
 
 ## 7.0 Conclusión
 
-StockWise es una aplicación robusta, escalable y segura que demuestra la potencia de combinar un framework moderno como Next.js con los servicios gestionados de Firebase y la inteligencia de los modelos de lenguaje de Google. Su arquitectura en tiempo real y su enfoque en la experiencia de usuario la convierten en una herramienta eficaz para la gestión de inventarios moderna.
-
+El sistema de gestión para la **Dirección de Educación, Cultura y Deporte** es una aplicación robusta, escalable y segura que demuestra la potencia de combinar un framework moderno como Next.js con los servicios gestionados de Firebase y la inteligencia de los modelos de lenguaje de Google. Su arquitectura en tiempo real y su enfoque en la experiencia de usuario la convierten en una herramienta eficaz para la gestión de inventarios moderna.

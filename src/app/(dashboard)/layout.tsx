@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import Link from "next/link";
@@ -121,7 +122,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <SidebarHeader>
             <div className="flex items-center gap-2">
               <Icons.logo className="size-6 text-primary" />
-              <h1 className="text-xl font-semibold">StockWise</h1>
+              <h1 className="text-xl font-semibold">D.E.C.D</h1>
             </div>
           </SidebarHeader>
           <SidebarContent>

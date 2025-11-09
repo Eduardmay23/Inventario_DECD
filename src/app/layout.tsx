@@ -9,8 +9,8 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
-  title: "StockWise",
-  description: "Un sistema inteligente de gestión de inventario.",
+  title: "Dirección de Educación, Cultura y Deporte",
+  description: "Sistema de gestión para la Dirección de Educación, Cultura y Deporte.",
 };
 
 export default function RootLayout({
