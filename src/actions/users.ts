@@ -46,10 +46,12 @@ export async function ensureInitialUsers() {
         const processUser = async (userData: typeof adminUserData) => {
             let uid: string;
             try {
+                // 1. Check if user exists in Firebase Auth
                 const userRecord = await auth.getUserByEmail(userData.email);
                 uid = userRecord.uid;
             } catch (error: any) {
                 if (error.code === 'auth/user-not-found') {
+                    // 2. If not, create them in Firebase Auth
                     const newUserRecord = await auth.createUser({
                         email: userData.email,
                         password: userData.password,
@@ -57,24 +59,25 @@ export async function ensureInitialUsers() {
                     });
                     uid = newUserRecord.uid;
                 } else {
-                    // Re-throw other errors
+                    // Re-throw other auth errors
                     throw error;
                 }
             }
             
-            // Now that we have a UID, set claims regardless of user existence before
-            if (userData.customClaims) {
-                await auth.setCustomUserClaims(uid, userData.customClaims);
-            }
+            // 3. Set custom claims for the user (idempotent)
+            await auth.setCustomUserClaims(uid, userData.customClaims);
 
+            // 4. Check if a profile exists for this UID in Firestore
             const userDocRef = firestore.collection('users').doc(uid);
             const docSnap = await userDocRef.get();
 
             if (!docSnap.exists) {
+                // 5. If not, create the Firestore profile
                 await userDocRef.set({ ...userData.firestoreProfile, uid });
             }
         };
 
+        // Process both users sequentially to avoid race conditions
         await processUser(adminUserData);
         await processUser(educacionUserData);
 
@@ -103,29 +106,34 @@ export async function updateUserAction(uid: string, data: Partial<Omit<User, 'id
 
     const firestoreUpdatePayload: { [key: string]: any } = {};
 
+    // Always update the name if provided
     if (data.name) {
       firestoreUpdatePayload.name = data.name;
     }
     
-    if (data.permissions !== undefined) {
-      firestoreUpdatePayload.permissions = Array.isArray(data.permissions) ? data.permissions : [];
-    }
+    // Always update permissions. If it's undefined (no boxes checked), it becomes an empty array.
+    firestoreUpdatePayload.permissions = Array.isArray(data.permissions) ? data.permissions : [];
     
+    // This logic handles a potential 'role' field, although it's not currently in the UI.
     if (data.role) {
        firestoreUpdatePayload.role = data.role;
        if (data.role === 'admin') {
+         // Admin role always gets all permissions.
          firestoreUpdatePayload.permissions = ['dashboard', 'inventory', 'loans', 'reports', 'settings'];
        }
     }
 
+    // Perform the Firestore update if there's anything to update
     if (Object.keys(firestoreUpdatePayload).length > 0) {
       await userDocRef.update(firestoreUpdatePayload);
     }
     
+    // Update Auth display name if provided
     if (data.name) {
       await auth.updateUser(uid, { displayName: data.name });
     }
 
+    // Update Auth custom claims (role) if provided
     if (data.role) {
       await auth.setCustomUserClaims(uid, { role: data.role });
     }
