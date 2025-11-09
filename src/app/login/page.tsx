@@ -15,10 +15,9 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { useAuth, useFirestore } from '@/firebase';
+import { useAuth } from '@/firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { FirebaseError } from 'firebase/app';
-import { ensureInitialUsers } from '@/actions/users';
 
 
 const DUMMY_DOMAIN = 'decd.local';
@@ -28,26 +27,9 @@ export default function LoginPage() {
   const auth = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [isSetupDone, setIsSetupDone] = useState(false);
-
-  // Run the initial user setup on the server once when the component mounts.
-  useEffect(() => {
-    async function runSetup() {
-      await ensureInitialUsers();
-      setIsSetupDone(true);
-    }
-    runSetup();
-  }, []);
-
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
-    if (!isSetupDone) {
-        // Prevent login attempts until server-side setup is complete.
-        setError('El sistema se está iniciando. Por favor, espera un momento...');
-        return;
-    }
 
     setIsLoading(true);
     setError(null);
@@ -138,9 +120,9 @@ export default function LoginPage() {
                   defaultValue="password123"
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={isLoading || !isSetupDone}>
-                {(isLoading || !isSetupDone) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isLoading ? 'Accediendo...' : !isSetupDone ? 'Configurando...' : 'Entrar'}
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isLoading ? 'Accediendo...' : 'Entrar'}
               </Button>
             </form>
           </CardContent>
