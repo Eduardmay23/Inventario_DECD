@@ -114,6 +114,8 @@ export async function updateUserAction(uid: string, data: Partial<Omit<User, 'id
     }
     
     // Crucially, handle permissions. It should be an array.
+    // This ensures that even an empty array [] is saved correctly,
+    // effectively removing all permissions.
     if (data.permissions !== undefined) {
       firestoreUpdatePayload.permissions = Array.isArray(data.permissions) ? data.permissions : [];
     }
