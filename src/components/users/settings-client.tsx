@@ -209,9 +209,17 @@ export default function SettingsClient() {
     settings: 'Configuración'
   };
 
-  const sortedUsers = useMemo(() => {
+  const displayedUsers = useMemo(() => {
     if (!users) return [];
-    return [...users].sort((a, b) => {
+    
+    const allAdmins = users.filter(u => u.role === 'admin');
+    const otherUsers = users.filter(u => u.role !== 'admin');
+    
+    const singleAdmin = allAdmins.length > 0 ? [allAdmins[0]] : [];
+    
+    const combinedUsers = [...singleAdmin, ...otherUsers];
+
+    return combinedUsers.sort((a, b) => {
       if (a.role === 'admin' && b.role !== 'admin') {
         return -1; // admin comes first
       }
@@ -266,7 +274,7 @@ export default function SettingsClient() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {sortedUsers.map(user => (
+                        {displayedUsers.map(user => (
                             <TableRow key={user.uid}>
                                 <TableCell className="font-medium">{user.name}</TableCell>
                                 <TableCell>{user.username}</TableCell>
@@ -378,3 +386,5 @@ export default function SettingsClient() {
     </>
   );
 }
+
+    
