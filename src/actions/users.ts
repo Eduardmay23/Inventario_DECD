@@ -133,8 +133,10 @@ export async function updateUserAction(uid: string, data: Partial<Omit<User, 'id
        }
     } else {
       // If role is not changing, still update permissions.
-      if (data.permissions) {
-        firestoreUpdatePayload.permissions = data.permissions;
+      // Make sure data.permissions is an array before using .includes()
+      const currentPermissions = data.permissions || [];
+      if (currentPermissions) {
+        firestoreUpdatePayload.permissions = currentPermissions;
       }
     }
 
