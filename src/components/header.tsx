@@ -4,7 +4,7 @@
 import { useMemo } from 'react';
 import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Bell, Search, AlertTriangle, PackageX, LogOut } from "lucide-react";
+import { Bell, Search, AlertTriangle, PackageX, LogOut, MinusSquare } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   Sheet,
@@ -15,9 +15,9 @@ import {
 } from "@/components/ui/sheet";
 import { Separator } from '@/components/ui/separator';
 import { useCollection, useFirestore, useMemoFirebase, useUser, useAuth, useDoc } from '@/firebase';
-import { collection, doc } from 'firebase/firestore';
+import { collection, doc, query, orderBy, limit } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
-import type { Product, User } from '@/lib/types';
+import type { Product, User, Notification } from '@/lib/types';
 import { Badge } from './ui/badge';
 import {
   DropdownMenu,
@@ -28,6 +28,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { formatDistanceToNow } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 
 type SearchProps = {
@@ -60,6 +62,12 @@ export default function AppHeader({
   const productsRef = useMemoFirebase(() => firestore ? collection(firestore, 'products') : null, [firestore]);
   const { data: products } = useCollection<Product>(productsRef);
 
+  const notificationsRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'notifications'), orderBy('createdAt', 'desc'), limit(5));
+  }, [firestore]);
+  const { data: adjustmentNotifications } = useCollection<Notification>(notificationsRef);
+
   const lowStockItems = useMemo(() => 
     products?.filter(p => p.quantity > 0 && p.quantity <= p.reorderPoint) || [],
     [products]
@@ -70,7 +78,8 @@ export default function AppHeader({
     [products]
   );
   
-  const notificationCount = lowStockItems.length + outOfStockItems.length;
+  const stockNotificationCount = lowStockItems.length + outOfStockItems.length;
+  const totalNotificationCount = stockNotificationCount + (adjustmentNotifications?.length || 0);
 
   const handleLogout = async () => {
     if (auth) {
@@ -79,14 +88,21 @@ export default function AppHeader({
   };
 
   const getInitials = (name?: string) => {
-    if (!name) return 'U';
-    const names = name.split(' ');
+    if (!name) return '?';
+    const names = name.trim().split(' ');
     if (names.length > 1) {
       return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
     }
     return name.substring(0, 2).toUpperCase();
   }
 
+  const getUserAvatar = (user: User | null | undefined): string => {
+    if (!user) return "";
+    if (user.username === 'admin') {
+      return 'https://escarcega.gob.mx/wp-content/uploads/2021/08/logo-escarcega-white.png';
+    }
+    return ""; // Fallback to initials
+  };
 
   return (
     <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center justify-between gap-4 border-b bg-background px-4 md:px-6 print-hide">
@@ -113,9 +129,9 @@ export default function AppHeader({
             <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="relative rounded-full">
                     <Bell className="h-5 w-5" />
-                    {notificationCount > 0 && (
+                    {totalNotificationCount > 0 && (
                         <span className="absolute top-0 right-0 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-xs font-bold text-destructive-foreground">
-                            {notificationCount}
+                            {totalNotificationCount}
                         </span>
                     )}
                     <span className="sr-only">Abrir notificaciones</span>
@@ -126,40 +142,64 @@ export default function AppHeader({
                     <SheetTitle>Notificaciones</SheetTitle>
                 </SheetHeader>
                 <div className="mt-4 space-y-4">
-                    {notificationCount === 0 ? (
+                    {totalNotificationCount === 0 ? (
                         <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground py-10">
                             <Bell className="h-10 w-10 mb-2" />
                             <p>No tienes notificaciones</p>
                         </div>
                     ) : (
                         <>
-                            {outOfStockItems.length > 0 && (
+                            {adjustmentNotifications && adjustmentNotifications.length > 0 && (
                                 <div className="space-y-2">
-                                    <h3 className="font-semibold flex items-center gap-2"><PackageX className="h-5 w-5 text-destructive" />Agotados ({outOfStockItems.length})</h3>
+                                    <h3 className="font-semibold flex items-center gap-2"><MinusSquare className="h-5 w-5 text-blue-500" />Ajustes Recientes</h3>
                                     <Separator />
-                                    <div className="space-y-2 text-sm">
-                                    {outOfStockItems.map(item => (
-                                        <div key={item.id} className="flex justify-between items-center">
-                                            <span>{item.name}</span>
-                                            <Badge variant="destructive">Agotado</Badge>
+                                    <div className="space-y-3 text-sm">
+                                    {adjustmentNotifications.map(item => (
+                                        <div key={item.id} className="flex flex-col">
+                                            <div className="flex justify-between items-start">
+                                                <span className="font-semibold">{item.title}</span>
+                                                <span className="text-xs text-muted-foreground whitespace-nowrap pl-2">
+                                                    {formatDistanceToNow(new Date(item.createdAt), { addSuffix: true, locale: es })}
+                                                </span>
+                                            </div>
+                                            <p className="text-muted-foreground">{item.description}</p>
                                         </div>
                                     ))}
                                     </div>
                                 </div>
                             )}
-                             {lowStockItems.length > 0 && (
-                                <div className="space-y-2">
-                                    <h3 className="font-semibold flex items-center gap-2"><AlertTriangle className="h-5 w-5 text-amber-500" />Stock Bajo ({lowStockItems.length})</h3>
-                                    <Separator />
-                                    <div className="space-y-2 text-sm">
-                                    {lowStockItems.map(item => (
-                                        <div key={item.id} className="flex justify-between items-center">
-                                            <span>{item.name}</span>
-                                            <span className="font-bold text-amber-600">{item.quantity} uds.</span>
+
+                            {stockNotificationCount > 0 && (
+                                <>
+                                    {outOfStockItems.length > 0 && (
+                                        <div className="space-y-2">
+                                            <h3 className="font-semibold flex items-center gap-2"><PackageX className="h-5 w-5 text-destructive" />Agotados ({outOfStockItems.length})</h3>
+                                            <Separator />
+                                            <div className="space-y-2 text-sm">
+                                            {outOfStockItems.map(item => (
+                                                <div key={item.id} className="flex justify-between items-center">
+                                                    <span>{item.name}</span>
+                                                    <Badge variant="destructive">Agotado</Badge>
+                                                </div>
+                                            ))}
+                                            </div>
                                         </div>
-                                    ))}
-                                    </div>
-                                </div>
+                                    )}
+                                    {lowStockItems.length > 0 && (
+                                        <div className="space-y-2">
+                                            <h3 className="font-semibold flex items-center gap-2"><AlertTriangle className="h-5 w-5 text-amber-500" />Stock Bajo ({lowStockItems.length})</h3>
+                                            <Separator />
+                                            <div className="space-y-2 text-sm">
+                                            {lowStockItems.map(item => (
+                                                <div key={item.id} className="flex justify-between items-center">
+                                                    <span>{item.name}</span>
+                                                    <span className="font-bold text-amber-600">{item.quantity} uds.</span>
+                                                </div>
+                                            ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
                             )}
                         </>
                     )}
@@ -171,11 +211,10 @@ export default function AppHeader({
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                    <Avatar className="h-8 w-8 bg-sidebar-accent">
+                    <Avatar className="h-9 w-9 bg-sidebar-accent">
                     <AvatarImage 
-                        src={profile.username === 'admin' ? 'https://escarcega.gob.mx/wp-content/uploads/2021/08/logo-escarcega-white.png' : undefined} 
+                        src={getUserAvatar(profile)}
                         alt={profile.name} 
-                        data-ai-hint="person avatar" 
                     />
                     <AvatarFallback>{getInitials(profile.name)}</AvatarFallback>
                     </Avatar>
@@ -184,10 +223,10 @@ export default function AppHeader({
                 <DropdownMenuContent className="w-56" align="end" forceMount>
                 <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">{profile.name}</p>
-                    <p className="text-xs leading-none text-muted-foreground">
+                      <p className="text-sm font-medium leading-none">{profile.name}</p>
+                      <p className="text-xs leading-none text-muted-foreground">
                         {profile.username}
-                    </p>
+                      </p>
                     </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />

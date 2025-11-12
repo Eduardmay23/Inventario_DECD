@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 
 import InventoryClient from "@/components/inventory/inventory-client";
 import AppHeader from '@/components/header';
-import type { Product, StockMovement } from '@/lib/types';
+import type { Product, StockMovement, Notification } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { FirestorePermissionError, errorEmitter } from '@/firebase';
 
@@ -195,6 +195,17 @@ export default function InventoryPage() {
                 date: new Date().toLocaleDateString('en-CA'), // YYYY-MM-DD
             };
             transaction.set(movementRef, newMovement);
+
+            const notificationRef = doc(collection(firestore, 'notifications'));
+            const newNotification: Notification = {
+              id: notificationRef.id,
+              type: 'ajuste',
+              title: `Ajuste en: ${productToAdjust.name}`,
+              description: `Se descontaron ${quantityToAdjust} unidades. Razón: ${adjustmentData.reason}.`,
+              createdAt: new Date().toISOString(),
+              isRead: false,
+            };
+            transaction.set(notificationRef, newNotification);
             
             return newQuantity;
         })

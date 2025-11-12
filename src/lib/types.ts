@@ -38,3 +38,12 @@ export type User = {
     role: 'admin' | 'user';
     permissions: string[];
 };
+
+export type Notification = {
+    id: string;
+    type: 'ajuste';
+    title: string;
+    description: string;
+    createdAt: string; // ISO 8601 format
+    isRead: boolean;
+};

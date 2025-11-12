@@ -26,7 +26,7 @@ const GenerateInventoryReportOutputSchema = z.object({
   }),
   inStock: z.array(z.object({ name: z.string(), quantity: z.number() })).describe('Lista de productos con buena cantidad de stock (cantidad mayor al punto de reorden).'),
   activeLoans: z.array(z.object({ name: z.string(), quantity: z.number(), requester: z.string() })).describe('Lista de productos que están actualmente en préstamo.'),
-  recentMovementsSummary: z.string().describe('Un breve resumen (1-2 frases) de los movimientos y ajustes de stock más significativos o recientes, explicando la razón del último movimiento.'),
+  recentMovementsSummary: z.string().describe('Un breve resumen (1-2 frases) del último ajuste de stock registrado, si existe. Debe especificar el producto, la cantidad y la razón. Si no hay movimientos, debe estar vacío.'),
 });
 export type GenerateInventoryReportOutput = z.infer<typeof GenerateInventoryReportOutputSchema>;
 
@@ -47,7 +47,7 @@ Analiza los siguientes datos y rellena los campos del schema de salida:
 - **stockAlerts.low**: Identifica productos donde la cantidad es > 0 pero <= reorderPoint.
 - **inStock**: Lista los productos donde la cantidad es > reorderPoint.
 - **activeLoans**: Lista los productos de los préstamos activos.
-- **recentMovementsSummary**: Analiza los movimientos de stock recientes. Enfócate en el último movimiento registrado. Describe la razón de ese ajuste en 1 o 2 frases. Si no hay movimientos, déjalo vacío.
+- **recentMovementsSummary**: Analiza el movimiento de stock más reciente (el último del array 'movementsData'). Describe claramente el producto, la cantidad descontada y la razón de ese ajuste en 1 o 2 frases. Si el array de movimientos está vacío, deja este campo como una cadena vacía.
 
 **Importante sobre las fechas**: Al analizar las fechas de los movimientos (campo 'date'), ignora siempre la parte de la hora y la zona horaria. Considera solo el día, mes y año para evitar errores de un día.
 
