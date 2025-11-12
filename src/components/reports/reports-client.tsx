@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { Bot, Loader2, Package, AlertTriangle, ArrowRightLeft, FileText, MinusSquare } from 'lucide-react';
+import { Bot, Loader2, Package, AlertTriangle, ArrowRightLeft, FileText, MinusSquare, FileSpreadsheet } from 'lucide-react';
 import * as XLSX from "xlsx";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -118,6 +118,53 @@ export default function ReportsClient({ products, loans, movements }: ReportsCli
     });
   };
 
+  const handleExportReport = () => {
+    if (!report) return;
+
+    const wb = XLSX.utils.book_new();
+
+    // Hoja 1: Resumen y Alertas
+    const summaryData = [
+        ["REPORTE DE INVENTARIO"],
+        [],
+        ["Estado General", report.generalSummary],
+        ["Resumen de Movimientos", report.recentMovementsSummary],
+    ];
+    const ws_summary = XLSX.utils.aoa_to_sheet(summaryData);
+    XLSX.utils.book_append_sheet(wb, ws_summary, "Resumen");
+
+    // Hoja 2: Alertas de Stock
+    const alertsData = [
+        ["ALERTAS DE STOCK"],
+        [],
+        ["Productos en Nivel Crítico (Agotados)"],
+        ...report.stockAlerts.critical.map(p => [p.name, p.quantity]),
+        [],
+        ["Productos con Stock Bajo"],
+        ...report.stockAlerts.low.map(p => [p.name, p.quantity]),
+    ];
+    const ws_alerts = XLSX.utils.aoa_to_sheet(alertsData);
+    XLSX.utils.book_append_sheet(wb, ws_alerts, "Alertas de Stock");
+
+    // Hoja 3: En Stock
+    const inStock_ws = XLSX.utils.json_to_sheet(report.inStock);
+    XLSX.utils.book_append_sheet(wb, inStock_ws, "Productos en Stock");
+
+    // Hoja 4: Préstamos Activos
+    const activeLoans_ws = XLSX.utils.json_to_sheet(report.activeLoans);
+    XLSX.utils.book_append_sheet(wb, activeLoans_ws, "Préstamos Activos");
+    
+    // Hoja 5: Todos los productos (datos brutos)
+    const allProducts_ws = XLSX.utils.json_to_sheet(products);
+    XLSX.utils.book_append_sheet(wb, allProducts_ws, "Datos Completos (Productos)");
+
+    // Hoja 6: Todos los préstamos (datos brutos)
+    const allLoans_ws = XLSX.utils.json_to_sheet(loans);
+    XLSX.utils.book_append_sheet(wb, allLoans_ws, "Datos Completos (Préstamos)");
+
+    XLSX.writeFile(wb, "reporte-inventario.xlsx");
+  };
+
   const handleCloseReport = () => {
     setReport(null);
   };
@@ -136,7 +183,7 @@ export default function ReportsClient({ products, loans, movements }: ReportsCli
             <CardTitle>Reporte de Inventario con IA</CardTitle>
           </div>
           <CardDescription>
-            Genera un análisis completo del estado actual de tu inventario.
+            Genera un análisis completo del estado actual de tu inventario y exporta los resultados.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -158,6 +205,10 @@ export default function ReportsClient({ products, loans, movements }: ReportsCli
                   ) : (
                     'Volver a Generar'
                   )}
+                </Button>
+                 <Button size="sm" onClick={handleExportReport} disabled={isPending}>
+                    <FileSpreadsheet className="mr-2 h-4 w-4" />
+                    Exportar a Excel
                 </Button>
               </div>
             </div>
