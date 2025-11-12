@@ -105,8 +105,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (profile.username === 'admin') {
       return 'https://escarcega.gob.mx/wp-content/uploads/2021/08/logo-escarcega-white.png';
     }
-    // Simple logic to alternate avatars for other users
-    if (profile.username.length % 2 === 0) {
+    // Use a simple hashing function on the UID to get a number
+    const hash = profile.uid.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    
+    // Simple logic to alternate avatars for other users based on a consistent property
+    if (hash % 2 === 0) {
       return 'https://placehold.co/40x40/3F51B5/FFFFFF/png?text=U&font=roboto';
     }
     return 'https://placehold.co/40x40/8E24AA/FFFFFF/png?text=U&font=roboto';

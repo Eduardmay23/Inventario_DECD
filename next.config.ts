@@ -40,12 +40,6 @@ const nextConfig: NextConfig = {
         hostname: 'escarcega.gob.mx',
         port: '',
         pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'tse1.mm.bing.net',
-        port: '',
-        pathname: '/**',
       }
     ],
   },
