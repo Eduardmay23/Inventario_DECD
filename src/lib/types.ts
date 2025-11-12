@@ -37,6 +37,4 @@ export type User = {
     name: string;
     role: 'admin' | 'user';
     permissions: string[];
-    gender?: 'male' | 'female' | 'other';
 };
-

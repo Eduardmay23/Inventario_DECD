@@ -87,21 +87,6 @@ export default function AppHeader({
     return name.substring(0, 2).toUpperCase();
   }
 
-  const getUserAvatar = (profile: User) => {
-    if (profile.username === 'admin') {
-      return 'https://escarcega.gob.mx/wp-content/uploads/2021/08/logo-escarcega-white.png';
-    }
-
-    switch(profile.gender) {
-        case 'male':
-            return 'https://placehold.co/40x40/3F51B5/FFFFFF/png?text=H&font=roboto';
-        case 'female':
-            return 'https://placehold.co/40x40/8E24AA/FFFFFF/png?text=M&font=roboto';
-        default:
-             return 'https://placehold.co/40x40/757575/FFFFFF/png?text=U&font=roboto';
-    }
-  };
-
 
   return (
     <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center justify-between gap-4 border-b bg-background px-4 md:px-6 print-hide">
@@ -187,7 +172,11 @@ export default function AppHeader({
                 <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                     <Avatar className="h-8 w-8 bg-sidebar-accent">
-                    <AvatarImage src={getUserAvatar(profile)} alt={profile.name} data-ai-hint="person avatar" />
+                    <AvatarImage 
+                        src={profile.username === 'admin' ? 'https://escarcega.gob.mx/wp-content/uploads/2021/08/logo-escarcega-white.png' : undefined} 
+                        alt={profile.name} 
+                        data-ai-hint="person avatar" 
+                    />
                     <AvatarFallback>{getInitials(profile.name)}</AvatarFallback>
                     </Avatar>
                 </Button>

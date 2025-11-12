@@ -89,7 +89,6 @@ export default function SettingsClient() {
           username: newUser.username,
           role: 'user',
           permissions: newUser.permissions,
-          gender: newUser.gender,
         };
 
         const userDocRef = doc(firestore, "users", newAuthUser.uid);
@@ -140,7 +139,6 @@ export default function SettingsClient() {
         const updatePayload = {
             name: data.name,
             permissions: data.permissions,
-            gender: data.gender,
         };
 
         setDoc(userDocRef, updatePayload, { merge: true })
