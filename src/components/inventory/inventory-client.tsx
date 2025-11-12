@@ -98,7 +98,6 @@ export default function InventoryClient({
       'Categoría': product.category,
       'Cantidad': product.quantity,
       'Ubicación': product.location,
-      'Punto de Reorden': product.reorderPoint
     }));
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
     const workbook = XLSX.utils.book_new();
