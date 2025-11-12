@@ -1,11 +1,9 @@
 
-'use server';
-
 import { Suspense } from 'react';
 import HomeClient from './home-client';
 import { Loader2 } from 'lucide-react';
 
-export default async function HomePage() {
+export default function HomePage() {
 
   return (
     <Suspense
