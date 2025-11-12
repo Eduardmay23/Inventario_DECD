@@ -25,7 +25,7 @@ export type StockMovement = {
     productId: string;
     productName:string;
     quantity: number;
-    type: 'descuento' | 'incremento';
+    type: 'ajuste' | 'incremento';
     reason: string;
     date: string;
 };

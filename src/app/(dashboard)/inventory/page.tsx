@@ -174,43 +174,50 @@ export default function InventoryPage() {
                 throw new Error("No se encontró el producto.");
             }
 
-            const product = productDoc.data() as Product;
-            if (adjustmentData.quantity > product.quantity) {
-                throw new Error(`Stock insuficiente. Solo hay ${product.quantity} unidades.`);
+            const currentQuantity = productDoc.data().quantity;
+            const quantityToAdjust = adjustmentData.quantity;
+
+            if (quantityToAdjust > currentQuantity) {
+                throw new Error(`Stock insuficiente. Solo hay ${currentQuantity} unidades.`);
             }
 
-            const newQuantity = product.quantity - adjustmentData.quantity;
+            const newQuantity = currentQuantity - quantityToAdjust;
             transaction.update(productRef, { quantity: newQuantity });
 
             const movementRef = doc(collection(firestore, `movements`));
             const newMovement: StockMovement = {
                 id: movementRef.id,
-                productId: product.id,
-                productName: product.name,
-                quantity: adjustmentData.quantity,
-                type: 'descuento',
+                productId: productToAdjust.id,
+                productName: productToAdjust.name,
+                quantity: quantityToAdjust,
+                type: 'ajuste',
                 reason: adjustmentData.reason,
                 date: new Date().toLocaleDateString('en-CA'), // YYYY-MM-DD
             };
             transaction.set(movementRef, newMovement);
+            
+            return newQuantity;
         })
-        .then(() => {
+        .then((newQuantity) => {
             toast({
                 title: "Stock Ajustado",
-                description: `Se descontaron ${adjustmentData.quantity} unidades de "${productToAdjust.name}".`,
+                description: `Se descontaron ${adjustmentData.quantity} unidades de "${productToAdjust.name}". Stock restante: ${newQuantity}.`,
             });
             setIsAdjustDialogOpen(false);
             setProductToAdjust(null);
         })
         .catch(async (error: any) => {
-            if (error.code) { // Check if it's a Firestore error
+             if (error.code) { // Firestore specific error
                 const permissionError = new FirestorePermissionError({
                     path: productRef.path,
                     operation: 'write', // transaction is a write operation
-                    requestResourceData: { quantity: `-${adjustmentData.quantity}`, reason: adjustmentData.reason }
+                    requestResourceData: { 
+                      quantity: (productToAdjust.quantity || 0) - adjustmentData.quantity, 
+                      reason: adjustmentData.reason 
+                    }
                 });
                 errorEmitter.emit('permission-error', permissionError);
-            } else {
+            } else { // Generic JS error
                 toast({
                   variant: "destructive",
                   title: "Error al Ajustar",
