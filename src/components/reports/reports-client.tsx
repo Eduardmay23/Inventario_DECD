@@ -63,7 +63,7 @@ const ReportViewer = ({ report }: { report: InventoryReport }) => {
          {activeLoans.length > 0 ? (
           <ul className="list-disc pl-5 space-y-1">
             {activeLoans.map(item => (
-              <li key={item.name}><strong>{item.name}</strong>: {item.quantity} unidad(es) a <span className="font-semibold">{item.requester}</span></li>
+              <li key={item.id}><strong>{item.name}</strong>: {item.quantity} unidad(es) a <span className="font-semibold">{item.requester}</span></li>
             ))}
           </ul>
         ) : <p className="text-sm text-gray-500 pl-5">No hay préstamos activos en este momento.</p>}

@@ -13,7 +13,7 @@ export interface InventoryReport {
     low: { name: string; quantity: number }[];
   };
   inStock: { name: string; quantity: number }[];
-  activeLoans: { name: string; quantity: number; requester: string }[];
+  activeLoans: { id: string; name: string; quantity: number; requester: string }[];
 }
 
 /**
@@ -43,6 +43,7 @@ export function generateLocalInventoryReport(
 
   // 2. Format active loans
   const formattedLoans = activeLoans.map(loan => ({
+    id: loan.id,
     name: loan.productName,
     quantity: loan.quantity,
     requester: loan.requester,
