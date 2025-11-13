@@ -39,6 +39,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AddProductForm } from "./add-product-form";
 import { EditProductForm } from "./edit-product-form";
@@ -65,6 +72,9 @@ interface InventoryClientProps {
   onEditClick: (product: Product) => void;
   onDeleteClick: (product: Product) => void;
   onAdjustClick: (product: Product) => void;
+  categories: string[];
+  categoryFilter: string;
+  setCategoryFilter: (value: string) => void;
 }
 
 export default function InventoryClient({
@@ -88,6 +98,9 @@ export default function InventoryClient({
   onEditClick,
   onDeleteClick,
   onAdjustClick,
+  categories,
+  categoryFilter,
+  setCategoryFilter,
 }: InventoryClientProps) {
 
   return (
@@ -101,6 +114,19 @@ export default function InventoryClient({
                         <CardDescription>Gestiona tus productos y sus niveles de stock.</CardDescription>
                     </div>
                     <div className="flex items-center gap-2">
+                        <Select value={categoryFilter} onValueChange={(value) => setCategoryFilter(value === "all" ? "" : value)}>
+                          <SelectTrigger className="w-[180px]">
+                            <SelectValue placeholder="Filtrar por categoría" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">Todas las categorías</SelectItem>
+                            {categories.map((category) => (
+                              <SelectItem key={category} value={category}>
+                                {category}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                          <Button size="sm" onClick={() => setIsAddDialogOpen(true)}>
                             <PlusCircle className="h-4 w-4 mr-2" />
                             Añadir Producto
@@ -179,12 +205,13 @@ export default function InventoryClient({
                         )) : (
                           <TableRow>
                             <TableCell colSpan={7} className="h-24 text-center">
-                              <div className="flex flex-col items-center gap-2">
-                                <p>No se encontraron productos.</p>
-                                <Button size="sm" variant="outline" onClick={() => setIsAddDialogOpen(true)}>
-                                  <PlusCircle className="mr-2 h-4 w-4" />
-                                  Añadir el primero
-                                </Button>
+                              <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                                <p>No se encontraron productos para los filtros aplicados.</p>
+                                {categoryFilter && (
+                                   <Button size="sm" variant="outline" onClick={() => setCategoryFilter('')}>
+                                      Limpiar filtro de categoría
+                                    </Button>
+                                )}
                               </div>
                             </TableCell>
                           </TableRow>
@@ -235,7 +262,7 @@ export default function InventoryClient({
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Estás absolutamente seguro?</AlertDialogTitle>
+            <AlertDialogTitle>¿Estás absolutely seguro?</AlertDialogTitle>
             <AlertDialogDescription>
               Esta acción no se puede deshacer. Esto eliminará permanentemente el
               producto "{productToDelete?.name}" de tus datos de inventario.

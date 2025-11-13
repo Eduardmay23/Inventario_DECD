@@ -17,6 +17,7 @@ export default function InventoryPage() {
   const firestore = useFirestore();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
 
@@ -35,19 +36,30 @@ export default function InventoryPage() {
 
   const { data: products, isLoading } = useCollection<Product>(productsRef);
 
+  const uniqueCategories = useMemo(() => {
+    if (!products) return [];
+    const categories = new Set(products.map(p => p.category));
+    return Array.from(categories);
+  }, [products]);
+
   const filteredData = useMemo(() => {
     if (!products) return [];
     const lowercasedQuery = searchQuery.toLowerCase();
-    if (!lowercasedQuery) {
-      return products;
-    }
+    
     return products.filter((product) => {
+      // Category filter
+      const categoryMatchFilter = categoryFilter ? product.category === categoryFilter : true;
+      if (!categoryMatchFilter) return false;
+      
+      // Search query filter
+      if (!lowercasedQuery) return true;
       const nameMatch = product.name?.toLowerCase().includes(lowercasedQuery) ?? false;
       const idMatch = product.id?.toLowerCase().includes(lowercasedQuery) ?? false;
       const categoryMatch = product.category?.toLowerCase().includes(lowercasedQuery) ?? false;
+      
       return nameMatch || idMatch || categoryMatch;
     });
-  }, [products, searchQuery]);
+  }, [products, searchQuery, categoryFilter]);
 
 
   const handleEditClick = (product: Product) => {
@@ -279,6 +291,9 @@ export default function InventoryPage() {
             onEditClick={handleEditClick}
             onDeleteClick={handleDeleteClick}
             onAdjustClick={handleAdjustClick}
+            categories={uniqueCategories}
+            categoryFilter={categoryFilter}
+            setCategoryFilter={setCategoryFilter}
           />
         )}
     </div>
