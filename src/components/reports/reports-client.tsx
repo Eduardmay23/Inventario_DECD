@@ -1,20 +1,20 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { Bot, Loader2, Package, AlertTriangle, ArrowRightLeft, FileText, MinusSquare } from 'lucide-react';
+import { Bot, Loader2, Package, AlertTriangle, ArrowRightLeft, FileText } from 'lucide-react';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { generateInventoryReport, type GenerateInventoryReportOutput } from '@/ai/flows/generate-inventory-report';
 import type { Loan, Product } from '@/lib/types';
+import { generateLocalInventoryReport, type InventoryReport } from '@/lib/report-generator';
 
 interface ReportsClientProps {
   products: Product[];
   loans: Loan[];
 }
 
-const ReportViewer = ({ report }: { report: GenerateInventoryReportOutput }) => {
+const ReportViewer = ({ report }: { report: InventoryReport }) => {
   const { generalSummary, stockAlerts, inStock, activeLoans } = report;
 
   return (
@@ -75,11 +75,11 @@ const ReportViewer = ({ report }: { report: GenerateInventoryReportOutput }) => 
 
 export default function ReportsClient({ products, loans }: ReportsClientProps) {
   const [isPending, startTransition] = useTransition();
-  const [report, setReport] = useState<GenerateInventoryReportOutput | null>(null);
+  const [report, setReport] = useState<InventoryReport | null>(null);
   const { toast } = useToast();
 
   const handleGenerateReport = () => {
-    startTransition(async () => {
+    startTransition(() => {
       if (products.length === 0) {
         toast({
           variant: 'destructive',
@@ -91,17 +91,14 @@ export default function ReportsClient({ products, loans }: ReportsClientProps) {
 
       try {
         const activeLoans = loans.filter(loan => loan.status === 'Prestado');
-        const result = await generateInventoryReport({
-          productsData: JSON.stringify(products),
-          loansData: JSON.stringify(activeLoans),
-        });
+        const result = generateLocalInventoryReport(products, activeLoans);
         setReport(result);
       } catch (error) {
-        console.error("No se pudo generar el reporte:", error);
+        console.error("No se pudo generar el reporte local:", error);
         toast({
           variant: 'destructive',
           title: 'Error',
-          description: 'No se pudo generar el reporte de IA. Por favor, inténtalo de nuevo.',
+          description: 'No se pudo generar el reporte. Por favor, inténtalo de nuevo.',
         });
       }
     });
@@ -121,8 +118,8 @@ export default function ReportsClient({ products, loans }: ReportsClientProps) {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <Bot className="h-6 w-6 text-primary" />
-            <CardTitle>Reporte de Inventario con IA</CardTitle>
+            <FileText className="h-6 w-6 text-primary" />
+            <CardTitle>Reporte de Inventario</CardTitle>
           </div>
           <CardDescription>
             Genera un análisis completo del estado actual de tu inventario.
@@ -157,7 +154,7 @@ export default function ReportsClient({ products, loans }: ReportsClientProps) {
                   <FileText className="h-8 w-8 text-primary" />
                 </div>
                 <p className="max-w-xs text-sm text-muted-foreground">
-                  Haz clic en el botón para que la IA analice todos los productos y préstamos, y genere un reporte ejecutivo.
+                  Haz clic en el botón para analizar todos los productos y préstamos, y generar un reporte ejecutivo.
                 </p>
                 <Button onClick={handleGenerateReport} disabled={isPending}>
                   {isPending ? (
