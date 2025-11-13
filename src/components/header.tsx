@@ -31,6 +31,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
+import { useRouter } from 'next/navigation';
 
 
 type SearchProps = {
@@ -51,6 +52,7 @@ export default function AppHeader({
   const { isMobile } = useSidebar();
   const firestore = useFirestore();
   const auth = useAuth();
+  const router = useRouter();
   const { user } = useUser();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
@@ -87,6 +89,7 @@ export default function AppHeader({
   const handleLogout = async () => {
     if (auth) {
       await signOut(auth);
+      router.replace('/login');
     }
   };
 

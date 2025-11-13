@@ -75,7 +75,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const handleLogout = async () => {
     if (auth) {
       await signOut(auth);
-      // The useEffect hook above will handle the redirect to /login
+      router.replace('/login');
     }
   };
 
@@ -176,14 +176,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </SidebarMenu>
           </SidebarContent>
            <SidebarFooter>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton onClick={handleLogout} tooltip="Cerrar Sesión">
-                  <LogOut />
-                  <span>Cerrar Sesión</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
+            {/* The logout button is handled in the header dropdown, this footer can be empty or used for other things */}
           </SidebarFooter>
         </Sidebar>
       </div>
