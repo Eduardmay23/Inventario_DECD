@@ -44,6 +44,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AddLoanForm } from "./add-loan-form";
+import { PrintConfirmationForm } from "./print-confirmation-form";
 import AppHeader from "../header";
 
 type LoansClientProps = {
@@ -76,15 +77,31 @@ export default function LoansClient({
     onCancelDelete
 }: LoansClientProps) {
  
+  const [isPrintConfirmOpen, setIsPrintConfirmOpen] = useState(false);
+  const [loanToPrint, setLoanToPrint] = useState<Loan | null>(null);
+
   const sortedLoans = (loans || []).sort((a, b) => {
     const dateA = a.loanDate || '';
     const dateB = b.loanDate || '';
     return dateB.localeCompare(dateA);
   });
   
-  const handlePrintReceipt = (loan: Loan) => {
-    sessionStorage.setItem('printableLoan', JSON.stringify(loan));
-    window.open('/print/loan-receipt', '_blank');
+  const handlePrintClick = (loan: Loan) => {
+    setLoanToPrint(loan);
+    setIsPrintConfirmOpen(true);
+  };
+  
+  const handleConfirmPrint = (printData: { deliveredBy: string; receivedBy: string }) => {
+    if (loanToPrint) {
+      const printableData = {
+        ...loanToPrint,
+        ...printData,
+      };
+      sessionStorage.setItem('printableLoan', JSON.stringify(printableData));
+      window.open('/print/loan-receipt', '_blank');
+      setIsPrintConfirmOpen(false);
+      setLoanToPrint(null);
+    }
   };
 
 
@@ -165,7 +182,7 @@ export default function LoansClient({
                                       </DropdownMenuTrigger>
                                       <DropdownMenuContent align="end">
                                           <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                                          <DropdownMenuItem onSelect={() => handlePrintReceipt(loan)}>
+                                          <DropdownMenuItem onSelect={() => handlePrintClick(loan)}>
                                             <Printer className="mr-2 h-4 w-4" /> Imprimir Comprobante
                                           </DropdownMenuItem>
                                           <DropdownMenuItem 
@@ -213,6 +230,21 @@ export default function LoansClient({
           </DialogHeader>
           <AddLoanForm onSubmit={onAddLoan} products={products} isPending={isPending} />
           </DialogContent>
+      </Dialog>
+
+      <Dialog open={isPrintConfirmOpen} onOpenChange={setIsPrintConfirmOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirmar Nombres para Impresión</DialogTitle>
+            <DialogDescription>
+              Introduce los nombres de las personas que entregan y reciben el material.
+            </DialogDescription>
+          </DialogHeader>
+          <PrintConfirmationForm
+            onSubmit={handleConfirmPrint}
+            onCancel={() => setIsPrintConfirmOpen(false)}
+          />
+        </DialogContent>
       </Dialog>
       
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={!isPending ? onCancelDelete : undefined}>

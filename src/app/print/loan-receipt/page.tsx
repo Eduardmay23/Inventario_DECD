@@ -8,7 +8,12 @@ import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
-const PrintLoanReceipt = ({ loan }: { loan: Loan }) => {
+interface PrintableLoan extends Loan {
+  deliveredBy?: string;
+  receivedBy?: string;
+}
+
+const PrintLoanReceipt = ({ loan }: { loan: PrintableLoan }) => {
   let formattedDate = "Fecha inválida";
   if (loan.loanDate && typeof loan.loanDate === 'string' && loan.loanDate.includes('-')) {
     try {
@@ -63,12 +68,14 @@ const PrintLoanReceipt = ({ loan }: { loan: Loan }) => {
 
         <div className="pt-16 text-center text-sm grid grid-cols-2 gap-8">
             <div>
+                <p className="font-semibold text-lg">{loan.deliveredBy || '_________________________'}</p>
                 <div className="border-t border-gray-400 w-2/3 mx-auto pt-2">
                     <p className="font-semibold">Entregado por:</p>
                     <p className="mt-1 text-gray-500">(Nombre y Firma)</p>
                 </div>
             </div>
             <div>
+                 <p className="font-semibold text-lg">{loan.receivedBy || '_________________________'}</p>
                 <div className="border-t border-gray-400 w-2/3 mx-auto pt-2">
                     <p className="font-semibold">Recibido por:</p>
                     <p className="mt-1 text-gray-500">(Nombre y Firma)</p>
@@ -93,7 +100,7 @@ const PrintLoanReceipt = ({ loan }: { loan: Loan }) => {
 
 
 export default function PrintLoanReceiptPage() {
-  const [loan, setLoan] = useState<Loan | null>(null);
+  const [loan, setLoan] = useState<PrintableLoan | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showPrintControls, setShowPrintControls] = useState(false);
   const printTriggered = useRef(false);
