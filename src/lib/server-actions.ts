@@ -13,21 +13,24 @@ const DUMMY_DOMAIN = 'decd.local';
  * This function is critical for server-side operations and uses explicit credentials.
  */
 function initializeFirebaseAdmin() {
-  if (admin.apps.length === 0) {
-    try {
-      if (!process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
-        throw new Error("Las credenciales de servicio de Firebase no están configuradas en las variables de entorno (GOOGLE_APPLICATION_CREDENTIALS_JSON).");
-      }
-      
-      const serviceAccount = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
-      
-      admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
-      });
-    } catch (e: any) {
-      console.error("Firebase admin initialization error:", e.message);
-      throw new Error('Error interno del servidor: no se pudo conectar a los servicios de Firebase.');
+  if (admin.apps.length > 0) {
+    return;
+  }
+  
+  try {
+    if (!process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
+      throw new Error("Las credenciales de servicio de Firebase no están configuradas en las variables de entorno (GOOGLE_APPLICATION_CREDENTIALS_JSON).");
     }
+    
+    const serviceAccount = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
+    
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+    });
+  } catch (e: any) {
+    console.error("Firebase admin initialization error:", e.message);
+    // Throw a more user-friendly error to be caught by the calling function.
+    throw new Error('Error interno del servidor: no se pudo conectar a los servicios de Firebase.');
   }
 }
 
@@ -95,7 +98,6 @@ export async function deleteExistingUser(uid: string) {
 
   try {
     // Step 1: Delete user from Firebase Authentication.
-    // This might fail if the user was already deleted from Auth but not Firestore, so we catch it.
     await admin.auth().deleteUser(uid);
   } catch (error: any) {
     // If the error is 'user-not-found', it means the auth part is already gone.
@@ -110,7 +112,6 @@ export async function deleteExistingUser(uid: string) {
 
   try {
     // Step 2: Delete user profile from Firestore.
-    // This is the crucial part that was failing before.
     await admin.firestore().collection('users').doc(uid).delete();
     
     revalidatePath('/settings');
