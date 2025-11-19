@@ -44,10 +44,8 @@ import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 import { useFirestore, useAuth, useCollection, useMemoFirebase, FirestorePermissionError, errorEmitter } from '@/firebase';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc, deleteDoc, collection } from 'firebase/firestore';
-import { FirebaseError } from 'firebase/app';
-import { deleteUser } from '@/ai/flows/delete-user';
+import { createNewUser, deleteExistingUser } from '@/lib/server-actions';
 
 
 const DUMMY_DOMAIN = 'decd.local';
@@ -74,54 +72,18 @@ export default function SettingsClient() {
 
   const handleAddUser = (newUser: Omit<User, 'id' | 'role' | 'uid'>) => {
     startTransition(async () => {
-      if (!auth || !firestore) {
-          toast({ variant: "destructive", title: "Error de Configuración", description: "Los servicios de Firebase no están disponibles." });
-          return;
-      }
-
-      const email = `${newUser.username}@${DUMMY_DOMAIN}`;
-      
-      try {
-        const { user: newAuthUser } = await createUserWithEmailAndPassword(auth, email, newUser.password!);
-        
-        const userDocData: Omit<User, 'password'> = {
-          uid: newAuthUser.uid,
-          name: newUser.name,
-          username: newUser.username,
-          role: 'user',
-          permissions: newUser.permissions,
-        };
-
-        const userDocRef = doc(firestore, "users", newAuthUser.uid);
-        setDoc(userDocRef, userDocData)
-            .catch(async (serverError) => {
-                const permissionError = new FirestorePermissionError({
-                    path: userDocRef.path,
-                    operation: 'create',
-                    requestResourceData: userDocData,
-                });
-                errorEmitter.emit('permission-error', permissionError);
-            });
-        
+      const result = await createNewUser(newUser);
+      if (result.success) {
         toast({
             title: "Usuario Creado",
-            description: `El usuario "${newUser.username}" ha sido creado con éxito.`,
+            description: result.message,
         });
         setIsAddUserOpen(false);
-
-      } catch (error: any) {
-        let description = "No se pudo crear el usuario. Inténtalo de nuevo.";
-        if (error instanceof FirebaseError) {
-          if (error.code === 'auth/email-already-in-use') {
-            description = 'Este nombre de usuario ya está en uso.';
-          } else if (error.code === 'auth/weak-password') {
-            description = 'La contraseña es demasiado débil. Debe tener al menos 6 caracteres.';
-          }
-        }
+      } else {
         toast({
             variant: "destructive",
             title: "Error al Crear Usuario",
-            description,
+            description: result.message,
         });
       }
     });
@@ -162,7 +124,7 @@ export default function SettingsClient() {
   };
 
   const openDeleteDialog = (user: User) => {
-    if (user.username === 'admin') {
+    if (user.role === 'admin') {
       toast({
         variant: "destructive",
         title: "Acción no permitida",
@@ -178,39 +140,23 @@ export default function SettingsClient() {
     if (!userToDelete || !firestore) return;
 
     startTransition(async () => {
-      try {
-        // Step 1: Call the Genkit flow to delete the user from Firebase Auth
-        const authDeletionResult = await deleteUser({ uid: userToDelete.uid });
-
-        if (!authDeletionResult.success) {
-          // If Auth deletion fails, show error and stop
-          throw new Error(authDeletionResult.message || 'Error en la autenticación al eliminar.');
-        }
-
-        // Step 2: If Auth deletion is successful, delete the user's document from Firestore
-        const userDocRef = doc(firestore, 'users', userToDelete.uid);
-        await deleteDoc(userDocRef);
-
+      const result = await deleteExistingUser(userToDelete.uid);
+      
+      if (result.success) {
         toast({
           title: 'Usuario Eliminado',
-          description: `El usuario "${userToDelete.username}" ha sido eliminado completamente.`,
+          description: `El usuario "${userToDelete.username}" ha sido eliminado.`,
         });
-
-      } catch (error: any) {
+      } else {
         toast({
           variant: 'destructive',
           title: 'Error al Eliminar',
-          description: error.message || 'No se pudo completar la eliminación del usuario.',
+          description: result.message,
         });
-        
-        // Check if the error is a Firestore permission error and emit it
-        if (error.name !== 'FirebaseError' && error.request) {
-            errorEmitter.emit('permission-error', error);
-        }
-      } finally {
-        setIsDeleteConfirmOpen(false);
-        setUserToDelete(null);
       }
+
+      setIsDeleteConfirmOpen(false);
+      setUserToDelete(null);
     });
   };
 
@@ -307,7 +253,7 @@ export default function SettingsClient() {
                                     variant="ghost" 
                                     size="icon" 
                                     onClick={() => openEditDialog(user)}
-                                    disabled={isPending || user.username === 'admin'}
+                                    disabled={isPending || user.role === 'admin'}
                                     aria-label="Editar usuario"
                                   >
                                     <Edit className="h-4 w-4" />
@@ -316,7 +262,7 @@ export default function SettingsClient() {
                                     variant="ghost" 
                                     size="icon" 
                                     onClick={() => openDeleteDialog(user)}
-                                    disabled={user.username === 'admin' || isPending}
+                                    disabled={user.role === 'admin' || isPending}
                                     aria-label="Eliminar usuario"
                                     className="text-destructive hover:text-destructive"
                                   >
