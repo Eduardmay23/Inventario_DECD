@@ -6,34 +6,6 @@ import * as admin from 'firebase-admin';
 import type { User } from './types';
 import 'dotenv/config';
 
-// This function is now self-contained within each server action to ensure correct initialization.
-function initializeFirebaseAdmin() {
-    if (admin.apps.length > 0) {
-        return;
-    }
-
-    try {
-        // When running in a Google Cloud environment (like Cloud Run),
-        // the SDK can auto-discover credentials.
-        admin.initializeApp();
-    } catch (e) {
-        console.error("Failed to initialize Firebase Admin SDK automatically.", e);
-        // This fallback is for local development or environments where auto-discovery fails.
-        // It requires the GOOGLE_APPLICATION_CREDENTIALS_JSON environment variable to be set.
-        try {
-            const serviceAccount = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON!);
-            admin.initializeApp({
-                credential: admin.credential.cert(serviceAccount),
-            });
-        } catch (initError) {
-             console.error("CRITICAL: Firebase Admin SDK initialization failed completely.", initError);
-             // If initialization fails, we throw to prevent the action from proceeding.
-             throw new Error('Error interno del servidor: no se pudo conectar a los servicios de Firebase.');
-        }
-    }
-}
-
-
 const DUMMY_DOMAIN = 'decd.local';
 
 /**
@@ -44,10 +16,16 @@ const DUMMY_DOMAIN = 'decd.local';
  * @returns An object indicating success or failure with a message.
  */
 export async function createNewUser(newUser: Omit<User, 'id' | 'role' | 'uid'>) {
-  try {
-    initializeFirebaseAdmin();
-  } catch (e: any) {
-    return { success: false, message: e.message };
+  if (!admin.apps.length) {
+    try {
+      const serviceAccount = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON!);
+      admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount),
+      });
+    } catch (e: any) {
+      console.error("Firebase admin initialization error:", e.message);
+      return { success: false, message: 'Error interno del servidor: no se pudo conectar a los servicios de Firebase.' };
+    }
   }
 
   const email = `${newUser.username}@${DUMMY_DOMAIN}`;
@@ -92,10 +70,16 @@ export async function createNewUser(newUser: Omit<User, 'id' | 'role' | 'uid'>) 
  * @returns An object indicating success or failure with a message.
  */
 export async function deleteExistingUser(uid: string) {
-    try {
-        initializeFirebaseAdmin();
-    } catch (e: any) {
-        return { success: false, message: e.message };
+    if (!admin.apps.length) {
+        try {
+          const serviceAccount = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON!);
+          admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount),
+          });
+        } catch (e: any) {
+          console.error("Firebase admin initialization error:", e.message);
+          return { success: false, message: 'Error interno del servidor: no se pudo conectar a los servicios de Firebase.' };
+        }
     }
     
     try {
