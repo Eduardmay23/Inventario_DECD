@@ -29,10 +29,6 @@ const ReportViewer = ({ report, filters }: { report: InventoryReport, filters: {
   const hasFilters = filters.category || filters.status;
   const filterDescription = [filters.category, filters.status].filter(Boolean).join(" y ");
 
-  const showStockAlerts = !filters.status || filters.status === "Agotado" || filters.status === "Stock Bajo";
-  const showInStock = !filters.status || filters.status === "En Stock";
-
-
   return (
     <div className="space-y-6 bg-white text-black p-8 rounded-lg max-w-4xl mx-auto font-sans">
       <header className="border-b pb-4">
@@ -85,7 +81,7 @@ const ReportViewer = ({ report, filters }: { report: InventoryReport, filters: {
       )}
 
 
-       {activeLoans.length > 0 && (
+       {activeLoans.length > 0 && !filters.status && (
          <div>
           <h2 className="text-xl font-bold mt-6 mb-3 border-b pb-2 flex items-center gap-2"><ArrowRightLeft />Préstamos Activos</h2>
             <ul className="list-disc pl-5 space-y-1">
