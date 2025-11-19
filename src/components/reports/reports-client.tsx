@@ -267,3 +267,4 @@ export default function ReportsClient({ products, loans, categories }: ReportsCl
     
 
     
+
