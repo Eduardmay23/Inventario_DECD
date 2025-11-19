@@ -47,6 +47,7 @@ import { useFirestore, useAuth, useCollection, useMemoFirebase, FirestorePermiss
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc, deleteDoc, collection } from 'firebase/firestore';
 import { FirebaseError } from 'firebase/app';
+import { deleteUser } from '@/ai/flows/delete-user';
 
 
 const DUMMY_DOMAIN = 'decd.local';
@@ -174,31 +175,44 @@ export default function SettingsClient() {
   };
 
   const confirmDelete = () => {
-    if (userToDelete && firestore) {
-      startTransition(() => {
-        const userDocRef = doc(firestore, "users", userToDelete.uid);
+    if (!userToDelete || !firestore) return;
+
+    startTransition(async () => {
+      try {
+        // Step 1: Call the Genkit flow to delete the user from Firebase Auth
+        const authDeletionResult = await deleteUser({ uid: userToDelete.uid });
+
+        if (!authDeletionResult.success) {
+          // If Auth deletion fails, show error and stop
+          throw new Error(authDeletionResult.message || 'Error en la autenticación al eliminar.');
+        }
+
+        // Step 2: If Auth deletion is successful, delete the user's document from Firestore
+        const userDocRef = doc(firestore, 'users', userToDelete.uid);
+        await deleteDoc(userDocRef);
+
+        toast({
+          title: 'Usuario Eliminado',
+          description: `El usuario "${userToDelete.username}" ha sido eliminado completamente.`,
+        });
+
+      } catch (error: any) {
+        toast({
+          variant: 'destructive',
+          title: 'Error al Eliminar',
+          description: error.message || 'No se pudo completar la eliminación del usuario.',
+        });
         
-        deleteDoc(userDocRef)
-            .then(() => {
-                toast({
-                    title: "Usuario Eliminado",
-                    description: `El perfil del usuario "${userToDelete.username}" ha sido eliminado.`,
-                });
-            })
-            .catch(async (serverError) => {
-                const permissionError = new FirestorePermissionError({
-                    path: userDocRef.path,
-                    operation: 'delete',
-                });
-                errorEmitter.emit('permission-error', permissionError);
-            })
-            .finally(() => {
-                setIsDeleteConfirmOpen(false);
-                setUserToDelete(null);
-            });
-      });
-    }
-  }
+        // Check if the error is a Firestore permission error and emit it
+        if (error.name !== 'FirebaseError' && error.request) {
+            errorEmitter.emit('permission-error', error);
+        }
+      } finally {
+        setIsDeleteConfirmOpen(false);
+        setUserToDelete(null);
+      }
+    });
+  };
 
   const permissionLabels: { [key: string]: string } = {
     dashboard: 'Panel',
@@ -327,7 +341,7 @@ export default function SettingsClient() {
                     <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
                       <li>El usuario **Administrador** tiene acceso a todas las secciones y no puede ser editado o eliminado.</li>
                       <li>La actualización de contraseñas no está disponible en esta pantalla por razones de seguridad.</li>
-                       <li>La eliminación de usuarios solo borra su perfil de la base de datos (Firestore). Para una eliminación completa, se debe hacer desde la **Consola de Firebase**.</li>
+                      <li>La eliminación de un usuario ahora lo borra tanto del sistema de acceso como de la base de datos de perfiles. Esta acción es permanente.</li>
                     </ul>
                 </CardContent>
             </Card>
@@ -368,16 +382,16 @@ export default function SettingsClient() {
       <AlertDialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+            <AlertDialogTitle>¿Estás absolutamente seguro?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción eliminará el registro del usuario de la base de datos, pero no del sistema de autenticación.
+              Esta acción eliminará permanentemente al usuario "{userToDelete?.username}" tanto del sistema de autenticación como de la base de datos. Esta acción no se puede deshacer.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90" disabled={isPending}>
               {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {isPending ? 'Eliminando...' : 'Eliminar'}
+              {isPending ? 'Eliminando...' : 'Confirmar Eliminación'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -385,5 +399,3 @@ export default function SettingsClient() {
     </>
   );
 }
-
-    
