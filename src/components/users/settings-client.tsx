@@ -45,7 +45,8 @@ import type { User } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 import { useFirestore, useAuth, useCollection, useMemoFirebase, FirestorePermissionError, errorEmitter } from '@/firebase';
 import { doc, setDoc, deleteDoc, collection } from 'firebase/firestore';
-import { createNewUser, deleteExistingUser } from '@/lib/server-actions';
+import { createNewUser } from '@/lib/server-actions';
+import { deleteUser } from '@/ai/flows/delete-user-flow';
 
 
 const DUMMY_DOMAIN = 'decd.local';
@@ -140,18 +141,39 @@ export default function SettingsClient() {
     if (!userToDelete || !firestore) return;
 
     startTransition(async () => {
-      const result = await deleteExistingUser(userToDelete.uid);
-      
-      if (result.success) {
-        toast({
-          title: 'Usuario Eliminado',
-          description: `El usuario "${userToDelete.username}" ha sido eliminado.`,
-        });
-      } else {
+      // 1. Call the Genkit flow to delete the user from Firebase Auth
+      const authDeleteResult = await deleteUser({ uid: userToDelete.uid });
+
+      if (!authDeleteResult.success) {
         toast({
           variant: 'destructive',
-          title: 'Error al Eliminar',
-          description: result.message,
+          title: 'Error de Autenticación',
+          description: authDeleteResult.message,
+        });
+        setIsDeleteConfirmOpen(false);
+        setUserToDelete(null);
+        return;
+      }
+      
+      // 2. If Auth deletion is successful, delete the user profile from Firestore.
+      const userDocRef = doc(firestore, 'users', userToDelete.uid);
+      try {
+        await deleteDoc(userDocRef);
+        toast({
+          title: 'Usuario Eliminado',
+          description: `El usuario "${userToDelete.username}" ha sido eliminado completamente.`,
+        });
+      } catch (error) {
+        // This is a fallback error, in case the Firestore deletion fails after Auth deletion.
+        const permissionError = new FirestorePermissionError({
+            path: userDocRef.path,
+            operation: 'delete',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+         toast({
+          variant: 'destructive',
+          title: 'Error de Base de Datos',
+          description: `El usuario fue eliminado del sistema de acceso, pero no se pudo borrar su perfil. Contacta a soporte.`,
         });
       }
 
