@@ -25,6 +25,8 @@ export type DeleteUserOutput = z.infer<typeof DeleteUserOutputSchema>;
 
 // Helper function to get a valid access token
 async function getAccessToken(): Promise<string> {
+  // Initialize GoogleAuth without specifying a key file.
+  // It will automatically use the application's default credentials in this environment.
   const auth = new GoogleAuth({
     scopes: [
       'https://www.googleapis.com/auth/cloud-platform',
