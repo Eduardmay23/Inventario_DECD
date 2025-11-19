@@ -11,14 +11,10 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import * as admin from 'firebase-admin';
-import { firebaseConfig } from '@/firebase/config';
 
 // Initialize Firebase Admin SDK if not already initialized
 if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.applicationDefault(),
-    databaseURL: `https://${firebaseConfig.projectId}.firebaseio.com`,
-  });
+  admin.initializeApp();
 }
 
 const DeleteUserInputSchema = z.object({
