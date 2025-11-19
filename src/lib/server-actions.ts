@@ -1,4 +1,3 @@
-
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -71,41 +70,5 @@ export async function createNewUser(newUser: Omit<User, 'id' | 'role' | 'uid'>) 
     }
     console.error("Error creating user:", error);
     return { success: false, message };
-  }
-}
-
-/**
- * Deletes a user from Firebase Authentication and their profile from Firestore.
- * This is a server action and should only be called from the server.
- *
- * @param uid - The UID of the user to delete.
- * @returns An object indicating success or failure with a message.
- */
-export async function deleteExistingUser(uid: string) {
-  if (!admin.apps.length) {
-    return { success: false, message: 'Error interno del servidor: no se pudo conectar a los servicios de Firebase.' };
-  }
-
-  try {
-    // Step 1: Delete user from Firebase Authentication.
-    await admin.auth().deleteUser(uid);
-  } catch (error: any) {
-    if (error.code !== 'auth/user-not-found') {
-      console.error(`Failed to delete user from Auth (${uid}):`, error);
-      return { success: false, message: 'No se pudo eliminar el usuario del sistema de autenticación.' };
-    }
-     console.log(`Auth user ${uid} not found, proceeding to delete from Firestore.`);
-  }
-
-  try {
-    // Step 2: Delete user profile from Firestore.
-    await admin.firestore().collection('users').doc(uid).delete();
-    
-    revalidatePath('/settings');
-
-    return { success: true, message: 'Usuario eliminado completamente del sistema.' };
-  } catch (error: any) {
-    console.error(`Failed to delete user profile from Firestore (${uid}):`, error);
-    return { success: false, message: 'No se pudo eliminar el perfil del usuario de la base de datos.' };
   }
 }

@@ -1,4 +1,3 @@
-
 'use client';
 
 import AppHeader from '@/components/header';
@@ -45,7 +44,8 @@ import type { User } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 import { useFirestore, useAuth, useCollection, useMemoFirebase, FirestorePermissionError, errorEmitter } from '@/firebase';
 import { doc, setDoc, deleteDoc, collection } from 'firebase/firestore';
-import { createNewUser, deleteExistingUser } from '@/lib/server-actions';
+import { createNewUser } from '@/lib/server-actions';
+import { deleteUser } from '@/ai/flows/delete-user-flow';
 
 
 export default function SettingsClient() {
@@ -138,18 +138,17 @@ export default function SettingsClient() {
     if (!userToDelete) return;
 
     startTransition(async () => {
-      const result = await deleteExistingUser(userToDelete.uid);
-      
-      if (result.success) {
+      try {
+        await deleteUser({ uid: userToDelete.uid });
         toast({
           title: "Usuario Eliminado",
-          description: result.message,
+          description: `El usuario "${userToDelete.username}" ha sido eliminado completamente.`,
         });
-      } else {
+      } catch (error: any) {
         toast({
           variant: "destructive",
           title: "Error al Eliminar",
-          description: result.message || "No se pudo completar la eliminación del usuario.",
+          description: error.message || "No se pudo completar la eliminación del usuario.",
         });
       }
       
