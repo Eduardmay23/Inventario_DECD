@@ -2,14 +2,14 @@
 
 import { revalidatePath } from 'next/cache';
 import * as admin from 'firebase-admin';
-import { UserRecord } from 'firebase-admin/auth';
 import type { User } from './types';
 
-// Centralized Firebase Admin SDK initialization
+// Centralized Firebase Admin SDK initialization function.
+// It will only initialize the app if it hasn't been initialized yet.
 function initializeFirebaseAdmin() {
   if (!admin.apps.length) {
-    // Initialize without credentials, relying on Application Default Credentials
-    // This is the most robust way in Google Cloud environments.
+    // This is the correct, robust way to initialize in a Google Cloud environment.
+    // It automatically finds the service account credentials.
     admin.initializeApp();
   }
 }
@@ -31,11 +31,10 @@ export async function createNewUser(newUser: Omit<User, 'id' | 'role' | 'uid'>) 
     return { success: false, message: 'Error interno del servidor: no se pudo conectar a los servicios de Firebase.' };
   }
 
-
   const email = `${newUser.username}@${DUMMY_DOMAIN}`;
 
   try {
-    const userRecord: UserRecord = await admin.auth().createUser({
+    const userRecord = await admin.auth().createUser({
       email: email,
       password: newUser.password!,
       displayName: newUser.name,
@@ -51,7 +50,6 @@ export async function createNewUser(newUser: Omit<User, 'id' | 'role' | 'uid'>) 
 
     await admin.firestore().collection('users').doc(userRecord.uid).set(userDocData);
     
-    // Revalidate the settings page to show the new user
     revalidatePath('/settings');
 
     return { success: true, message: `Usuario "${newUser.username}" creado con éxito.` };
@@ -69,19 +67,44 @@ export async function createNewUser(newUser: Omit<User, 'id' | 'role' | 'uid'>) 
 
 /**
  * Deletes a user from Firebase Authentication and their profile from Firestore.
- * THIS FUNCTION IS DEPRECATED AND SHOULD NOT BE USED.
- * The logic has been moved to a Genkit flow that uses the REST API.
- * This function remains to avoid breaking changes if it were referenced elsewhere,
- * but it will fail due to the SDK initialization issues.
  *
  * @param uid - The UID of the user to delete.
  * @returns An object indicating success or failure with a message.
  */
 export async function deleteExistingUser(uid: string) {
-    console.warn("DEPRECATED: deleteExistingUser is called, but it's known to fail. Use the Genkit flow instead.");
-    // Returning a failure message immediately to prevent execution.
-    return { 
-        success: false, 
-        message: 'Función obsoleta. La eliminación de usuarios ahora se maneja a través de un nuevo servicio.'
-    };
+    try {
+        initializeFirebaseAdmin();
+    } catch (e) {
+        console.error("Failed to initialize Firebase Admin SDK", e);
+        return { success: false, message: 'Error interno del servidor: no se pudo conectar a los servicios de Firebase.' };
+    }
+    
+    try {
+        // Step 1: Delete the user from Firebase Authentication
+        await admin.auth().deleteUser(uid);
+
+        // Step 2: Delete the user's profile from Firestore
+        const userDocRef = admin.firestore().collection('users').doc(uid);
+        await userDocRef.delete();
+        
+        // Step 3: Revalidate the path to update the UI
+        revalidatePath('/settings');
+
+        return { success: true, message: 'Usuario eliminado permanentemente.' };
+    } catch (error: any) {
+        console.error("Error deleting user:", error);
+        let message = 'No se pudo eliminar el usuario.';
+        if (error.code === 'auth/user-not-found') {
+            message = 'El usuario no existe en el sistema de autenticación, pero se intentará borrar el perfil.';
+            try {
+                const userDocRef = admin.firestore().collection('users').doc(uid);
+                await userDocRef.delete();
+                revalidatePath('/settings');
+                return { success: true, message: 'Se eliminó el perfil del usuario (ya no existía en autenticación).' };
+            } catch (dbError) {
+                 return { success: false, message: 'El usuario no existe ni en autenticación ni en la base de datos.' };
+            }
+        }
+        return { success: false, message };
+    }
 }
