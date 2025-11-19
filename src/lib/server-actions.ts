@@ -4,16 +4,35 @@
 import { revalidatePath } from 'next/cache';
 import * as admin from 'firebase-admin';
 import type { User } from './types';
-import { firebaseConfig } from '@/firebase/config';
 import 'dotenv/config';
 
+// This function is now self-contained within each server action to ensure correct initialization.
 function initializeFirebaseAdmin() {
-  if (!admin.apps.length) {
-    // When GOOGLE_APPLICATION_CREDENTIALS is set, we don't need to pass any arguments to initializeApp.
-    // It will automatically use the service account file.
-    admin.initializeApp();
-  }
+    if (admin.apps.length > 0) {
+        return;
+    }
+
+    try {
+        // When running in a Google Cloud environment (like Cloud Run),
+        // the SDK can auto-discover credentials.
+        admin.initializeApp();
+    } catch (e) {
+        console.error("Failed to initialize Firebase Admin SDK automatically.", e);
+        // This fallback is for local development or environments where auto-discovery fails.
+        // It requires the GOOGLE_APPLICATION_CREDENTIALS_JSON environment variable to be set.
+        try {
+            const serviceAccount = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON!);
+            admin.initializeApp({
+                credential: admin.credential.cert(serviceAccount),
+            });
+        } catch (initError) {
+             console.error("CRITICAL: Firebase Admin SDK initialization failed completely.", initError);
+             // If initialization fails, we throw to prevent the action from proceeding.
+             throw new Error('Error interno del servidor: no se pudo conectar a los servicios de Firebase.');
+        }
+    }
 }
+
 
 const DUMMY_DOMAIN = 'decd.local';
 
@@ -27,9 +46,8 @@ const DUMMY_DOMAIN = 'decd.local';
 export async function createNewUser(newUser: Omit<User, 'id' | 'role' | 'uid'>) {
   try {
     initializeFirebaseAdmin();
-  } catch (e) {
-    console.error("Failed to initialize Firebase Admin SDK", e);
-    return { success: false, message: 'Error interno del servidor: no se pudo conectar a los servicios de Firebase.' };
+  } catch (e: any) {
+    return { success: false, message: e.message };
   }
 
   const email = `${newUser.username}@${DUMMY_DOMAIN}`;
@@ -45,7 +63,7 @@ export async function createNewUser(newUser: Omit<User, 'id' | 'role' | 'uid'>) 
       uid: userRecord.uid,
       name: newUser.name,
       username: newUser.username,
-      role: 'user', // All manually created users have the 'user' role
+      role: 'user',
       permissions: newUser.permissions || [],
     };
 
@@ -67,9 +85,8 @@ export async function createNewUser(newUser: Omit<User, 'id' | 'role' | 'uid'>) 
 }
 
 /**
- * Deletes a user from Firebase Authentication.
- * This function now ONLY handles the auth deletion. The Firestore deletion
- * will be handled by the client upon success.
+ * Deletes a user from Firebase Authentication and then from Firestore.
+ * This function is designed to be robust.
  *
  * @param uid - The UID of the user to delete.
  * @returns An object indicating success or failure with a message.
@@ -77,24 +94,37 @@ export async function createNewUser(newUser: Omit<User, 'id' | 'role' | 'uid'>) 
 export async function deleteExistingUser(uid: string) {
     try {
         initializeFirebaseAdmin();
-    } catch (e) {
-        console.error("Failed to initialize Firebase Admin SDK", e);
-        return { success: false, message: 'Error interno del servidor: no se pudo conectar a los servicios de Firebase.' };
+    } catch (e: any) {
+        return { success: false, message: e.message };
     }
     
     try {
+        // Step 1: Attempt to delete from Firebase Authentication.
         await admin.auth().deleteUser(uid);
-        revalidatePath('/settings'); // Invalidate cache to reflect changes
-        return { success: true, message: 'Usuario eliminado de la autenticación.' };
     } catch (error: any) {
-        console.error("Error deleting user from Auth:", error);
-        let message = 'No se pudo eliminar el usuario.';
-        // If user is not found in auth, we can still consider it a "success"
-        // for the purpose of deleting the Firestore record.
+        // If the user is not found in Auth, we log it but don't treat it as a failure,
+        // because our goal is to ensure the user is removed from the system,
+        // and this means they are already gone from the auth side.
         if (error.code === 'auth/user-not-found') {
-            console.log("User not found in auth, proceeding to delete from Firestore.");
-            return { success: true, message: 'El usuario no existía en autenticación, se procederá a borrar el perfil.' };
+            console.log(`User with UID ${uid} not found in Firebase Auth. Proceeding to delete from Firestore.`);
+        } else {
+            // For other auth errors, we should stop and report the problem.
+            console.error("Error deleting user from Auth:", error);
+            return { success: false, message: 'No se pudo eliminar el usuario de la autenticación.' };
         }
-        return { success: false, message };
+    }
+    
+    // Step 2: Delete from Firestore. This runs regardless of whether the user was in Auth,
+    // ensuring the user profile is always removed from our database.
+    try {
+        const userDocRef = admin.firestore().collection('users').doc(uid);
+        await userDocRef.delete();
+        
+        revalidatePath('/settings'); // Invalidate cache to reflect changes on the client.
+        return { success: true, message: 'Usuario eliminado completamente.' };
+
+    } catch (firestoreError: any) {
+        console.error("Error deleting user from Firestore:", firestoreError);
+        return { success: false, message: 'El usuario fue eliminado del acceso, pero no se pudo borrar el perfil de la base de datos.' };
     }
 }
